@@ -68,7 +68,9 @@ If that gives an error(eg for spacexr, and glmGamPoi), install BioCManager by ru
 
 ## Load Xenium Seurat Object
 
-> **Important naming note**: Avoid naming your R objects the same as Xenium FOV identifiers or `orig.ident` values.
+> Note: Avoid naming your R objects the same as Xenium FOV identifiers or `orig.ident` values.
+
+We use UpdateSeuratObject function to verify RDS object is formatted correctly
 
 ```
 setwd("C:/_Working_Directory_") # Eg. D:/work/Xenium/Input_RDS 
@@ -330,6 +332,7 @@ ImageDimPlot(
 # Summary
 
 TODO
+
 
 
 
