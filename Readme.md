@@ -2,11 +2,6 @@
 title: "Xenium + Seurat v5 Demo Workflow"
 author: "Ekam Singh"
 date: "01/28/26"
-output:
-  html_document:
-    toc: true
-    toc_depth: 3
-    theme: cosmo
 ---
 
 ```
@@ -336,4 +331,5 @@ ImageDimPlot(
 # Summary
 
 TODO
+
 
