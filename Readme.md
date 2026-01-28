@@ -1,6 +1,5 @@
 ---
-title: "Xenium + Seurat v5 Demo Workflow"
-author: "Ekam Singh"
+title: "Xenium Demo"
 date: "01/28/26"
 ---
 
@@ -331,5 +330,6 @@ ImageDimPlot(
 # Summary
 
 TODO
+
 
 
