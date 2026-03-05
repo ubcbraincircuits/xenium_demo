@@ -50,22 +50,22 @@ options(future.globals.maxSize = 250000 * 1024^2)
 # Example: Setting Working Directory and Reading an RDS File
 # ------------------------------------------------------------------
 # Set the working directory to the folder containing your saved RDS objects
-setwd("D:/work/Xenium/Input_RDS") 
+setwd("D:/work/Github_demo/xenium_demo/Data")
 
 # Load in the RDS object
-MAID_obj<-readRDS("M_70_Seurat_obj.rds")
+Mouse_obj<-readRDS("Region_2_right-obj.rds")
 # Update Seurat Objects to new structure for storing data/calculations. 
 # For Seurat v3 objects, will validate object structure ensuring all keys 
 # and feature names are formed properly.
-MAID_obj <- UpdateSeuratObject(MAID_obj)
+Mouse_obj <- UpdateSeuratObject(Mouse_obj)
 
-MAID_obj$orig.ident <- "M_70"
-table(MAID_obj$orig.ident)
-unique(MAID_obj$orig.ident)
+Mouse_obj$orig.ident <- "M_70"
+table(Mouse_obj$orig.ident)
+unique(Mouse_obj$orig.ident)
 
 #Declare condition/Age or other categories before assigning them
-MAID_obj$Condition <- "Unknown"
-MAID_obj$Condition[MAID_obj$orig.ident %in% ("M_70")] <- "MAID"
+Mouse_obj$Condition <- "Unknown"
+Mouse_obj$Condition[Mouse_obj$orig.ident %in% ("M_70")] <- "MAID"
 
 # Start by analyzing one sample at a time to understand the workflow and your data
 
@@ -80,7 +80,7 @@ MAID_obj$Condition[MAID_obj$orig.ident %in% ("M_70")] <- "MAID"
 
 # Histogram 
 # - nFeature_Xenium: number of unique transcript features detected per cell (i.e., how many genes/transcripts)
-ggplot(MAID_obj@meta.data, aes(x = nFeature_Xenium)) +
+ggplot(Mouse_obj@meta.data, aes(x = nFeature_Xenium)) +
   geom_histogram(bins = 50, fill = "steelblue", color = "black") +
   theme_classic() +
   scale_y_log10() +
@@ -92,7 +92,7 @@ ggplot(MAID_obj@meta.data, aes(x = nFeature_Xenium)) +
 
 # - nCount_Xenium: total transcript count per cell (sum of all detected transcript counts)
 # nCount_Xenium histogram
-ggplot(MAID_obj@meta.data, aes(x = nCount_Xenium)) +
+ggplot(Mouse_obj@meta.data, aes(x = nCount_Xenium)) +
   geom_histogram(bins = 25, fill = "firebrick", color = "black") +
   theme_classic() +
   scale_y_log10() +
@@ -102,26 +102,28 @@ ggplot(MAID_obj@meta.data, aes(x = nCount_Xenium)) +
     y = "Cell count"
   )
 
-#RidgePlot(MAID_obj, features = c("nFeature_Xenium", "nCount_Xenium"), ncol = 2)
+
+VlnPlot(Mouse_obj, features = c("nFeature_Xenium", "nCount_Xenium"), ncol = 2, pt.size =0)
+#RidgePlot(Mouse_obj, features = c("nFeature_Xenium", "nCount_Xenium"), ncol = 2)
 
 
 
 # Filter cells based on QC thresholds
-#MAID_obj <- subset(MAID_obj, subset = nFeature_Xenium > 2 & nCount_Xenium > 0) 
+#Mouse_obj <- subset(Mouse_obj, subset = nFeature_Xenium > 2 & nCount_Xenium > 0) 
 # Note: to compare multiple QC filters for downstream analysis
 # assign filtered results to new object names 
 # (e.g., obj1filtered) instead of overwriting obj1, obj2 etc.
-#MAID_obj_filtered <- subset(MAID_obj, subset = nFeature_Xenium > 0 & nCount_Xenium > 0)
+#Mouse_obj_filtered <- subset(Mouse_obj, subset = nFeature_Xenium > 0 & nCount_Xenium > 0)
 
 
 
-#n_genes <- dim(MAID_obj)[1]
-#n_cells <- dim(MAID_obj)[2]
+#n_genes <- dim(Mouse_obj)[1]
+#n_cells <- dim(Mouse_obj)[2]
 
 
 # 2. Normalization and Feature Selection with SCTransform
 # SCTransform performs normalization, variance stabilization, and identifies variable features
-MAID_obj <- SCTransform(MAID_obj, assay = "Xenium")
+Mouse_obj <- SCTransform(Mouse_obj, assay = "Xenium")
 
 #TBI <- SCTransform(TBI, assay = "Xenium")
 
@@ -164,11 +166,11 @@ residualVarPlot <- function(gene_var, xaxis = "gmean", max_resvar = 100, ntop = 
 
 # test normalization by plotting residual vs size of chart
 # working on charting
-gene_attr_maid <- SCTResults(MAID_obj, slot = "feature.attributes", assay = "SCT")
-gene_attr_tbi <- SCTResults(MAID_obj, slot = "feature.attributes", assay = "SCT")
+gene_attr_maid <- SCTResults(Mouse_obj, slot = "feature.attributes", assay = "SCT")
+# gene_attr_tbi <- SCTResults(Mouse_obj, slot = "feature.attributes", assay = "SCT")
 
 residualVarPlot(gene_attr_maid, max_resvar = 10, pt_size = 4)
-residualVarPlot(gene_attr_tbi, max_resvar = 30, pt_size = 4)
+# residualVarPlot(gene_attr_tbi, max_resvar = 30, pt_size = 4)
 
 
 
@@ -180,7 +182,7 @@ residualVarPlot(gene_attr_tbi, max_resvar = 30, pt_size = 4)
 # - Including more PCs captures more variation in the data, but may introduce noise.
 # - Including fewer PCs reduces noise but may risk missing important biological signals.
 
-MAID_obj <- RunPCA(MAID_obj, features = VariableFeatures(MAID_obj), npcs = 50, verbose = FALSE)
+Mouse_obj <- RunPCA(Mouse_obj, features = VariableFeatures(Mouse_obj), npcs = 50, verbose = FALSE)
 
 
 # Option 1: Examine ElbowPlot to choose how many PCs to use downstream
@@ -192,93 +194,27 @@ MAID_obj <- RunPCA(MAID_obj, features = VariableFeatures(MAID_obj), npcs = 50, v
 # PCA is about maximizing variance in the first components. However, 
 # variance is a quantity that makes most sense for continuous and non-sparse data.
 # if you dont see a clear elbow, you data might be unsuitable for an elbow plot examination
-ElbowPlot(MAID_obj, ndims = 50)
+ElbowPlot(Mouse_obj, ndims = 50)
 
 # Option 2: PCA Heatmap
 # - Use DimHeatmap() to visualize the top features (genes) driving each PC.
 # - Adjust 'dims' to specify which PCs to examine; 'cells' controls how many cells to display per PC.
 # - 'balanced = TRUE' scales positive and negative loadings equally.
-DimHeatmap(MAID_obj, dims = 1:12, cells = 500, balanced = TRUE)
+DimHeatmap(Mouse_obj, dims = 1:12, cells = 500, balanced = TRUE)
 
 
-
-#master_pal <- DiscretePalette_scCustomize(num_colors = 50, palette = "polychrome")
-
-#Larissa's loop for testing resolution and dims for best selection
-dim_reso_test <- function(dataset, dims_list, resolutions, output_dir, red, group_vars) {
-  if (!dir.exists(output_dir)) {
-    dir.create(output_dir, recursive = TRUE)  
-  }
-  for (dims in dims_list) {
-    max_dim <- max(dims)
-    for (res in resolutions) {
-      dat_mod <- dataset 
-      dat_mod <- FindNeighbors(dat_mod, dims = dims, reduction = red)
-      dat_mod <- FindClusters(dat_mod, resolution = res)
-      dat_mod <- RunUMAP(dat_mod, dims = dims, reduction = red)
-      
-      #assign colours
-      current_clusters <- levels(Idents(dat_mod))
-      # Generate distinct color palette (Polychrome handles up to 40–50 unique colors)
-      if (length(current_clusters) <= 36) {
-        palette <- Polychrome::palette36.colors(length(current_clusters))
-      } else {
-        # For >36 clusters, extend smoothly with hue palette
-        palette <- scales::hue_pal()(length(current_clusters))
-      }
-      plot_pal <- palette[1:length(current_clusters)]
-      names(plot_pal) <- current_clusters
-      
-      plots <- list(DimPlot(dat_mod, shuffle = TRUE, label = TRUE, cols = plot_pal) + coord_fixed())
-      for (group_var in group_vars) {
-        plots <- append(plots, list(DimPlot(dat_mod, group.by = group_var, shuffle = TRUE) + coord_fixed()))
-      }
-      # Create the vertical stack
-      combined_plot <- patchwork::wrap_plots(plots, ncol = 1)
-      
-      # Add the metadata title
-      plot_title <- paste("Dimensions:", max_dim, "| Resolution:", res)
-      combined_plot <- combined_plot + patchwork::plot_annotation(title = plot_title)
-      
-      # Define PNG file path
-      file_name <- paste0("Dim_", max_dim, "_Res_", res, ".png")
-      png_path <- file.path(output_dir, file_name)
-      
-      # Save the plot
-      # Height is dynamic based on number of plots; 300 DPI ensures crisp labels
-      ggplot2::ggsave(
-        filename = png_path,
-        plot = combined_plot,
-        width = 8,
-        height = 5 * length(plots),
-        dpi = 300,
-        limitsize = FALSE
-      )
-    }
-  }
-}
-# Run the automated test
-dim_reso_test(
-  dataset = MAID_obj,
-  dims_list = list(1:20, 1:30, 1:40),  # test PC ranges
-  resolutions = c(0.1, 0.4, 0.8),    # test resolutions
-  # "Z:/Wellington Lab/Mehwish/Xenium_human_run1/B_HumanXenium_Run1_OG_rds"
-  output_dir = "D:/work/Xenium/Output/single", # where to save PDFs
-  red = "pca",             # dimensionality reduction to use
-  group_vars = c("orig.ident", "Condition")  # metadata for coloring
-)
 
 # 4. Non-linear Embedding: UMAP
 # UMAP parameters:
 # - dims: PCs to include (e.g., 1:20)
-MAID_obj <- FindNeighbors(MAID_obj, dims = 1:24)
-MAID_obj <- FindClusters(MAID_obj, resolution = 0.5)
-MAID_obj <- RunUMAP(MAID_obj, dims = 1:24)
+Mouse_obj <- FindNeighbors(Mouse_obj, dims = 1:24)
+Mouse_obj <- FindClusters(Mouse_obj, resolution = 0.5)
+Mouse_obj <- RunUMAP(Mouse_obj, dims = 1:24)
 
 
 ## Set single colour pallete
 # Get all cluster IDs
-global_clusters <- levels(Idents(MAID_obj))
+global_clusters <- levels(Idents(Mouse_obj))
 n <- length(global_clusters)
 
 # Generate distinct color palette (Polychrome handles up to 40–50 unique colors)
@@ -293,31 +229,31 @@ if (n <= 36) {
 cluster_colors <- setNames(palette, global_clusters)
 
 # Store mapping for reproducibility
-MAID_obj@misc$cluster_colors <- cluster_colors
+Mouse_obj@misc$cluster_colors <- cluster_colors
 
 # Ensure Idents is a factor with consistent levels
-Idents(MAID_obj) <- factor(Idents(MAID_obj), levels = global_clusters)
+Idents(Mouse_obj) <- factor(Idents(Mouse_obj), levels = global_clusters)
 
 #Plot UMAP (recommend adding PC and resol into the title to keep track of diff umaps)
-DimPlot(MAID_obj, group.by = "seurat_clusters", 
+DimPlot(Mouse_obj, group.by = "seurat_clusters", 
         reduction = "umap",
-        cols = MAID_obj@misc$cluster_colors) + DarkTheme() + coord_fixed() + ggtitle("UMAP REDUCTION")
+        cols = Mouse_obj@misc$cluster_colors) + DarkTheme() + coord_fixed() + ggtitle("UMAP REDUCTION")
 
 
 #Plot your UMAP by metadata (ex. orig.ident, sex, stage, disease condition etc.)
 #this is only after you have merged and/or integrated your data and added metadata columns (Section 3 and 4)
-#DimPlot(MAID_obj, reduction = "umap", cols = MAID_obj@misc$cluster_colors) + DarkTheme() + coord_fixed() + ggtitle("UMAP REDUCTION grouped"
+#DimPlot(Mouse_obj, reduction = "umap", cols = Mouse_obj@misc$cluster_colors) + DarkTheme() + coord_fixed() + ggtitle("UMAP REDUCTION grouped"
 
 
 
 # 5. Clustering
 # Identify clusters
 # - resolution: higher => more clusters
-MAID_Neighbors <- FindNeighbors(MAID_obj, dims = 1:20)
+MAID_Neighbors <- FindNeighbors(Mouse_obj, dims = 1:20)
 MAID_Clustered <- FindClusters(MAID_Neighbors, resolution = 0.1)
 
 
-#ImageDimPlot(MAID_Clustered, fov = "M1", cols = MAID_obj@misc$cluster_colors, size = 0.5, border.size = NA,
+#ImageDimPlot(MAID_Clustered, fov = "M1", cols = Mouse_obj@misc$cluster_colors, size = 0.5, border.size = NA,
 #axes = TRUE, dark.background = TRUE) + DarkTheme()
 ImageDimPlot(MAID_Clustered, molecules = "SLC17A7", nmols = 10000, alpha = 0.3, mols.cols = "red")
 
@@ -325,22 +261,22 @@ ImageDimPlot(MAID_Clustered, molecules = "SLC17A7", nmols = 10000, alpha = 0.3, 
 # For FeaturePlots() and VlnPlots() plot raw Xenium counts, temporarily switch the default assay.
 DefaultAssay(MAID_Clustered) <- "Xenium"
 #FeaturePlot: gene expression in UMAP space 
-FeaturePlot(MAID_obj, features = c("AQP4"), label = TRUE)
+FeaturePlot(Mouse_obj, features = c("Aqp4"), label = TRUE)
 
 #Violin Plot of raw counts (optional: set log = TRUE for log scale)
-VlnPlot(MAID_obj, features = c("SLC17A7", "GAD1", "GAD2"), pt.size = 0, log = TRUE)
+VlnPlot(Mouse_obj, features = c("Slc17a7", "Gfap", "Sla"), pt.size = 0, log = TRUE)
 #uses the polychrome colours
-VlnPlot_scCustom(MAID_obj, features = c("SLC17A7", "GAD1", "GAD2"), pt.size = 0, log = TRUE)
+VlnPlot_scCustom(Mouse_obj, features = c("Slc17a7", "Gfap", "Sla"), pt.size = 0, log = TRUE)
 
-DotPlot(object = MAID_obj, features = c("AQP4", "PAX6", "TGFB2"), dot.min  = 0.1,
+DotPlot(object = Mouse_obj, features = c("Aqp4", "Paqr5", "Trem2"), dot.min  = 0.1,
         dot.scale= 6, group.by = "nFeature_Xenium") +
   scale_color_gradientn(colors = c("#0047AB", "white", "firebrick")) +
   theme_classic() + ggtitle("") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
         axis.text.y = element_text(size = 8))
-ImageFeaturePlot(MAID_obj, features = c("AQP4", "PAX6", "TGFB2"))
+ImageFeaturePlot(Mouse_obj, features = c("Aqp4", "Paqr5", "Trem2"))
 #for single gene (works great)
-ImageFeaturePlot(MAID_obj, fov = "M_70", features = ("SLC17A7"))
+#ImageFeaturePlot(Mouse_obj, fov = "M_70", features = ("Slc17a7"))
 
 
 
@@ -356,15 +292,15 @@ ImageFeaturePlot(MAID_obj, fov = "M_70", features = ("SLC17A7"))
 
 ###Several ways to subset (dependent on dataset)
 ##Option 1: Subset the object by clusters of interest (most common):
-obj_sub <- subset(MAID_obj, idents = c(0, 2, 4, 6))
+obj_sub <- subset(Mouse_obj, idents = c(0, 2, 4, 6))
 
 ##Option 2: subset based on marker expression thresholds (e.g. cells that express a marker gene or combination of them)
 # Example: keep cells where MarkerGene1 expression > 1 in the subset
-#obj_sub <- subset(MAID_obj, subset = SLC17A7 > 1)
+#obj_sub <- subset(Mouse_obj, subset = SLC17A7 > 1)
 
 ##Option 3: Crop your image down to a region of interest 
 #Copy your original object
-#obj1_crop <- MAID_obj
+#obj1_crop <- Mouse_obj
 
 #Crop the FOV (“M1”) by specifying x/y ranges
 #(replace the numbers with your desired coordinates)
@@ -381,7 +317,7 @@ obj_sub <- subset(MAID_obj, idents = c(0, 2, 4, 6))
 #obj_sub <- subset(obj1_crop, cells = keep_cells)
 
 #Quick spatial check to confirm cropping
-ImageDimPlot(obj_sub, fov = "M_70", cols = MAID_obj@misc$cluster_colors, size = 0.5, border.size = NA,
+ImageDimPlot(obj_sub, fov = "M_70", cols = Mouse_obj@misc$cluster_colors, size = 0.5, border.size = NA,
              axes = TRUE, dark.background = TRUE) + DarkTheme()
 
 ##Once you have your subset using  any one of the options above, you can perform steps 1-7 as above

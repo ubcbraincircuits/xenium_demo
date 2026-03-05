@@ -3,7 +3,7 @@
 
 - R (>= 4.2 recommended), Rstudio
 - 8GB of memory,(recommended memory >=16GB)
-- Load objects provided by UBC (`.rds`) 
+- Load objects provided by UBC (`.rds`) [here](https://osf.io/rgajd/files/osfstorage), under the Data folder
 
 ---
 
