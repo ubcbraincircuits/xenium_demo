@@ -104,7 +104,6 @@ ggplot(Mouse_obj@meta.data, aes(x = nCount_Xenium)) +
 
 
 VlnPlot(Mouse_obj, features = c("nFeature_Xenium", "nCount_Xenium"), ncol = 2, pt.size =0)
-#RidgePlot(Mouse_obj, features = c("nFeature_Xenium", "nCount_Xenium"), ncol = 2)
 
 
 
@@ -133,7 +132,7 @@ Mouse_obj <- SCTransform(Mouse_obj, assay = "Xenium")
 # Link to paper on SCTransform: https://link.springer.com/article/10.1186/s13059-021-02584-9
 
 # function to plot residual variance vs gene expression 
-residualVarPlot <- function(gene_var, xaxis = "gmean", max_resvar = 100, ntop = 25, annotate = F, pt_size = 1.1) {
+residualVarPlot <- function(gene_var, xaxis = "gmean", max_resvar = 100, ntop = 20, annotate = F, pt_size = 1.1) {
   gene_var$gene <- rownames(gene_var)
   topn <- subset(gene_var, rank(-gene_var[, "residual_variance"]) <= ntop)$gene
   gene_var[gene_var$residual_variance > max_resvar, "residual_variance"] <- max_resvar
@@ -160,6 +159,9 @@ residualVarPlot <- function(gene_var, xaxis = "gmean", max_resvar = 100, ntop = 
       segment.alpha = 0.2
     )
   }
+  
+  cat("Top", ntop, "genes by residual variance:\n")
+  print(topn)
   
   return(p)
 }
