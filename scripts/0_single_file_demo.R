@@ -59,13 +59,14 @@ Mouse_obj<-readRDS("Region_2_right-obj.rds")
 # and feature names are formed properly.
 Mouse_obj <- UpdateSeuratObject(Mouse_obj)
 
-Mouse_obj$orig.ident <- "M_70"
+
+# check ident and fov
 table(Mouse_obj$orig.ident)
 unique(Mouse_obj$orig.ident)
 
 #Declare condition/Age or other categories before assigning them
 Mouse_obj$Condition <- "Unknown"
-Mouse_obj$Condition[Mouse_obj$orig.ident %in% ("M_70")] <- "MAID"
+#Mouse_obj$Condition[Mouse_obj$orig.ident %in% ("M_70")] <- "MAID"
 
 # Start by analyzing one sample at a time to understand the workflow and your data
 
@@ -83,7 +84,7 @@ Mouse_obj$Condition[Mouse_obj$orig.ident %in% ("M_70")] <- "MAID"
 ggplot(Mouse_obj@meta.data, aes(x = nFeature_Xenium)) +
   geom_histogram(bins = 50, fill = "steelblue", color = "black") +
   theme_classic() +
-  scale_y_log10() +
+  #scale_y_log10() +        # for log scaling
   labs( #labels*
     title = "nFeature_Xenium",
     x = "Number of detected features",
@@ -95,7 +96,7 @@ ggplot(Mouse_obj@meta.data, aes(x = nFeature_Xenium)) +
 ggplot(Mouse_obj@meta.data, aes(x = nCount_Xenium)) +
   geom_histogram(bins = 25, fill = "firebrick", color = "black") +
   theme_classic() +
-  scale_y_log10() +
+  #scale_y_log10() +        # for log scaling
   labs(
     title = "nCount_Xenium",
     x = "Total transcript counts",
@@ -278,7 +279,7 @@ DotPlot(object = Mouse_obj, features = c("Aqp4", "Paqr5", "Trem2"), dot.min  = 0
         axis.text.y = element_text(size = 8))
 ImageFeaturePlot(Mouse_obj, features = c("Aqp4", "Paqr5", "Trem2"))
 #for single gene (works great)
-#ImageFeaturePlot(Mouse_obj, fov = "M_70", features = ("Slc17a7"))
+ImageFeaturePlot(Mouse_obj, fov = "X8fov", features = ("Slc17a7"))
 
 
 
@@ -319,8 +320,8 @@ obj_sub <- subset(Mouse_obj, idents = c(0, 2, 4, 6))
 #obj_sub <- subset(obj1_crop, cells = keep_cells)
 
 #Quick spatial check to confirm cropping
-ImageDimPlot(obj_sub, fov = "M_70", cols = Mouse_obj@misc$cluster_colors, size = 0.5, border.size = NA,
-             axes = TRUE, dark.background = TRUE) + DarkTheme()
+ImageDimPlot(obj_sub, fov = "X8fov", cols = Mouse_obj@misc$cluster_colors, size = 0.5, border.size = NA,
+             axes = TRUE, dark.background = TRUE) + DarkTheme() 
 
 ##Once you have your subset using  any one of the options above, you can perform steps 1-7 as above
 # Before re-running SCTransform on the refined subset, switch default assay

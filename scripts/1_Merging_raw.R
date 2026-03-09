@@ -50,8 +50,7 @@ options(future.globals.maxSize = 250000 * 1024^2)
 # Example: Setting Working Directory and Reading an RDS File
 # ------------------------------------------------------------------
 # Set the working directory to the folder containing your saved RDS objects
-setwd("D:/work/Xenium/Input_RDS") 
-
+setwd("D:/work/Github_demo/xenium_demo/Data")
 
 #############SECTION: MERGING DATA##################################################
 
@@ -59,21 +58,35 @@ setwd("D:/work/Xenium/Input_RDS")
 # Multi-Sample Merge Example (Using raw RDS, unprocessed data)
 # ------------------------------------------------------------------
 #Read in original rds files (do not merge manipulated samples from section 2)
+Mouse_2L_obj <-readRDS("Region_2_left-obj.rds")
+Mouse_2L_obj <- UpdateSeuratObject(Mouse_2L_obj)
+Mouse_3L_obj <-readRDS("Region_3_left-obj.rds")
+Mouse_3L_obj <- UpdateSeuratObject(Mouse_3L_obj)
+Mouse_4L_obj <-readRDS("Region_4_left-obj.rds")
+Mouse_4L_obj <- UpdateSeuratObject(Mouse_4L_obj)
+Mouse_5L_obj <-readRDS("Region_5_left-obj.rds")
+Mouse_5L_obj <- UpdateSeuratObject(Mouse_5L_obj)
 
-MAID <-readRDS("M_70_Seurat_obj.rds")
-MAID <- UpdateSeuratObject(MAID)
-TBI <-readRDS("M_38_Seurat_obj.rds")
-TBI <- UpdateSeuratObject(TBI)
-SEPSIS <-readRDS("M_56_Seurat_obj.rds")
-SEPSIS <- UpdateSeuratObject(SEPSIS)
-HIBI <-readRDS("M_44_Seurat_obj.rds")
-HIBI <- UpdateSeuratObject(HIBI)
+
+Mouse_2L_obj$orig.ident <- "X2_fov"
+Mouse_3L_obj$orig.ident <- "X3_fov"
+Mouse_4L_obj$orig.ident <- "X4_fov"
+Mouse_5L_obj$orig.ident <- "X5_fov"
+
+#MAID <-readRDS("M_70_Seurat_obj.rds")
+#MAID <- UpdateSeuratObject(MAID)
+#TBI <-readRDS("M_38_Seurat_obj.rds")
+#TBI <- UpdateSeuratObject(TBI)
+#SEPSIS <-readRDS("M_56_Seurat_obj.rds")
+#SEPSIS <- UpdateSeuratObject(SEPSIS)
+#HIBI <-readRDS("M_44_Seurat_obj.rds")
+#HIBI <- UpdateSeuratObject(HIBI)
 
 #assign orig IDs (FOVs from Xenium run)
-MAID$orig.ident <- "M_70"
-TBI$orig.ident <- "M_38"
-SEPSIS$orig.ident <- "M_56"
-HIBI$orig.ident <- "M_44"
+#MAID$orig.ident <- "M_70"
+#TBI$orig.ident <- "M_38"
+#SEPSIS$orig.ident <- "M_56"
+#HIBI$orig.ident <- "M_44"
 
 ##Add metadata columns for your conditions (e.g. developmental stage, sex, disease state etc)
 #example here is Sex, but you can add several columns as needed
@@ -87,9 +100,14 @@ HIBI$orig.ident <- "M_44"
 
 # Merge samples using add.cell.ids to prefix cell barcodes
 merged_obj <- merge(
-  x = MAID,
-  y = list(TBI, SEPSIS, HIBI),
-  add.cell.ids = c("MAID", "TBI", "SEPSIS", "HIBI"))  
+  x = Mouse_2L_obj,
+  y = list(Mouse_3L_obj, Mouse_4L_obj, Mouse_5L_obj),
+  add.cell.ids = c("Region_2_left", "Region_3_left", "Region_4_left", "Region_5_left"))  
+
+#merged_obj <- merge(
+#  x = MAID,
+#  y = list(TBI, SEPSIS, HIBI),
+#  add.cell.ids = c("MAID", "TBI", "SEPSIS", "HIBI"))  
 
 # Verify orig.ident values in metadata (should reflect FOV names assigned in Xenium Analyzer)
 # - unique(): shows which categories are present
@@ -130,15 +148,15 @@ merged_obj$DeathAge <- NA
 # Assign 'condition or age' to cells from respective cases 
 # This works by selecting cells where orig.ident matches the sample IDs
 #orig IDs are changed to FOV, so use that names
-merged_obj$DeathAge[merged_obj$orig.ident %in% ("M_70")] <- "37"
-merged_obj$DeathAge[merged_obj$orig.ident %in% ("M_38")] <- "58"
-merged_obj$DeathAge[merged_obj$orig.ident %in% ("M_56")] <- "68"
-merged_obj$DeathAge[merged_obj$orig.ident %in% ("M_44")] <- "74"
+#merged_obj$DeathAge[merged_obj$orig.ident %in% ("M_70")] <- "37"
+#merged_obj$DeathAge[merged_obj$orig.ident %in% ("M_38")] <- "58"
+#merged_obj$DeathAge[merged_obj$orig.ident %in% ("M_56")] <- "68"
+#merged_obj$DeathAge[merged_obj$orig.ident %in% ("M_44")] <- "74"
 
-merged_obj$Condition[merged_obj$orig.ident %in% ("M_70")] <- "MAID"
-merged_obj$Condition[merged_obj$orig.ident %in% ("M_38")] <- "TBI"
-merged_obj$Condition[merged_obj$orig.ident %in% ("M_56")] <- "Sepsis"
-merged_obj$Condition[merged_obj$orig.ident %in% ("M_44")] <- "HIBI"
+#merged_obj$Condition[merged_obj$orig.ident %in% ("M_70")] <- "MAID"
+#merged_obj$Condition[merged_obj$orig.ident %in% ("M_38")] <- "TBI"
+#merged_obj$Condition[merged_obj$orig.ident %in% ("M_56")] <- "Sepsis"
+#merged_obj$Condition[merged_obj$orig.ident %in% ("M_44")] <- "HIBI"
 
 # Simple check of 'Condition' metadata column values
 # - unique(): shows which categories are present 
@@ -271,7 +289,7 @@ merged_obj <- FindClusters(merged_obj, resolution = 0.3)
 merged_obj <- RunUMAP(merged_obj, dims = 1:30, reduction = "pca")
 
 "GFAP" %in% rownames(merged_obj)
-FeaturePlot(merged_obj, features = "SLC17A6")
+FeaturePlot(merged_obj, features = "Slc17a7")
 
 # Option 2: PCA Heatmap (can also create these heatmaps after selecting the PCA above)
 # - Use DimHeatmap() to visualize the top features (genes) driving each PC.
@@ -330,7 +348,7 @@ DimPlot(
 # --- Plot spatial FOV view with locked colors ---
 ImageDimPlot(
   merged_obj,
-  fov = "M_44",
+  fov = "Xfov3",
   cols = merged_obj@misc$cluster_colors,
   size = 0.5,
   border.size = NA,
