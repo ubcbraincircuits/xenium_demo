@@ -258,7 +258,7 @@ MAID_Clustered <- FindClusters(MAID_Neighbors, resolution = 0.1)
 
 #ImageDimPlot(MAID_Clustered, fov = "M1", cols = Mouse_obj@misc$cluster_colors, size = 0.5, border.size = NA,
 #axes = TRUE, dark.background = TRUE) + DarkTheme()
-ImageDimPlot(MAID_Clustered, molecules = "SLC17A7", nmols = 10000, alpha = 0.3, mols.cols = "red")
+ImageDimPlot(MAID_Clustered, molecules = "Slc17a7", nmols = 10000, alpha = 0.3, mols.cols = "red")
 
 # Note: After running SCTransform, it sets the active assay to "SCT" (normalized data).
 # For FeaturePlots() and VlnPlots() plot raw Xenium counts, temporarily switch the default assay.

@@ -348,7 +348,7 @@ DimPlot(
 # --- Plot spatial FOV view with locked colors ---
 ImageDimPlot(
   merged_obj,
-  fov = "Xfov3",
+  fov = "X3_fov",
   cols = merged_obj@misc$cluster_colors,
   size = 0.5,
   border.size = NA,
