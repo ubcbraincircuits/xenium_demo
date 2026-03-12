@@ -3,9 +3,9 @@
 
 To get started, you will need to install the required software and download the necessary data. It is important to install R before installing RStudio so that RStudio can automatically detect your R installation.
 
-- Download and install R first from the CRAN website (version 4.2 or higher is recommended) [here](https://muug.ca/mirror/cran/).
+- Download R first from the CRAN website (version 4.2 or higher is recommended) [here](https://muug.ca/mirror/cran/).
 And run the installer.
-- Download and install RStudio Desktop only after R is fully installed [here](https://posit.co/download/rstudio-desktop/https://posit.co/download/rstudio-desktop/).
+- Download RStudio Desktop only after R is fully installed [here](https://posit.co/download/rstudio-desktop/https://posit.co/download/rstudio-desktop/).
 And run the installer.
 
 - Ensure your system has at least 8GB of memory, though 16GB or more is highly recommended.
