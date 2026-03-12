@@ -48,7 +48,7 @@ Then Open Rstudio and:
 - Click on new project, then existing directory
 - Navigate to and select unzipped directory
 
-Then, to begin execution: follow the scripts in numbered order
+Then, to begin demo:
 
 - Navigate to the scripts directory
 - Follow the scripts in numbered order
