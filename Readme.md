@@ -1,13 +1,21 @@
 
-# Prerequisites
+# Prerequisites and Installation
 
-- R (>= 4.2 recommended), Rstudio
-- 8GB of memory,(recommended memory >=16GB)
-- Load objects provided by UBC (`.rds`) [here](https://osf.io/rgajd/files/osfstorage), under the Data folder
+To get started, you will need to install the required software and download the necessary data. It is important to install R before installing RStudio so that RStudio can automatically detect your R installation.
+
+- Download and install R first from the CRAN website (version 4.2 or higher is recommended) [here](https://muug.ca/mirror/cran/).
+And run the installer.
+- Download and install RStudio Desktop only after R is fully installed [here](https://posit.co/download/rstudio-desktop/https://posit.co/download/rstudio-desktop/).
+And run the installer.
+
+- Ensure your system has at least 8GB of memory, though 16GB or more is highly recommended.
+
+- Download the required UBC data objects (.rds files) from this OSF link under the Data folder [here](https://osf.io/rgajd/files/osfstorage).
+And place it in the directory of your choice.
 
 ---
 
-# Overview
+## Overview
 
 TODO: The goal is not just to run code, but to **explain why each step exists** and what decisions users should think about during analysis.
 ```
@@ -15,7 +23,8 @@ TODO: The goal is not just to run code, but to **explain why each step exists** 
     ├── Readme.md  # Current file  
     ├── scripts/ 
     │   ├── Walkthrough.md
-    │   ├── single_file_demo.R
+    │   ├── 0_Load_Packages.R
+    |   ├── 1_Single_file_Demo.R
     │   ├── Merging_raw.R
     │   ├── merging_harmony.R
     |
@@ -23,7 +32,7 @@ TODO: The goal is not just to run code, but to **explain why each step exists** 
 
 
 ---
-# Open in Rstudio
+## Open in Rstudio
 
 To download and open the repo in Rstudio, do the following: 
 
@@ -39,7 +48,10 @@ Then Open Rstudio and:
 - Click on new project, then existing directory
 - Navigate to and select unzipped directory
 
+Then, to begin execution: follow the scripts in numbered order
 
+- Navigate to the scripts directory
+- Follow the scripts in numbered order
 
 
 

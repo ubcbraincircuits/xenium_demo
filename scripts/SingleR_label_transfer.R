@@ -57,24 +57,35 @@ setwd("D:/work/Github_demo/xenium_demo/Data")
 
 # read in single-cell and xenium data 
 # single cell data (reference)
-sc <- readRDS("yourscRNAseqobj.rds")
+#sc <- readRDS("allen_cortex.rds")
 # Xenium data 
 ST <- readRDS("merged_obj.rds")
 
 
 # assign scRNAseq as your reference 
-sc.ref <- sc
+#sc.ref <- sc
 
 # make dat your xenium obj 
-dat <- cortical_ST
+dat <- ST #cortical_ST
+
+# single cell data (reference)
+sc.ref <- readRDS("allen_cortex.rds") #from this link: https://support.10xgenomics.com/spatial-gene-expression/datasets
+
+# Xenium data
+#dat <- readRDS("merged_obj.rds") 
+
+# Run garbage collection to free up temporary RAM overhead
+gc()
 
 
 # quick checks on reference annotations and assays
-unique(sc.ref$majorcelltype)
+#unique(sc.ref$majorcelltype)
+unique(sc.ref$subclass)
 Assays(sc.ref)
 
 # Set the output directory for saving per-sample SingleR result RDS files
-output_dir <- 'X:/Cembrowski Lab/pathtoyouroutputfolder/'
+#output_dir <- 'X:/Cembrowski Lab/pathtoyouroutputfolder/'
+output_dir <- 'D:/work/Github_demo/xenium_demo/Data/Output'
 if (!dir.exists(output_dir)) {
   dir.create(output_dir, recursive = TRUE)
 }
@@ -86,9 +97,11 @@ sc.ref <- NormalizeData(sc.ref, assay = "RNA", verbose = FALSE)
 # Pseudobulk the single-cell reference (recommended: faster and less noisy than per-cell)
 pseudobulk <- AggregateExpression(
   sc.ref,
-  group.by = "majorcelltype",  # labels defining reference classes
+  #group.by = "majorcelltype",  # labels defining reference classes
+  group.by = "subclass",
   assays = "RNA",
-  slot = "data", 
+  #slot = "data",
+  #layer = "data", 
   return.seurat = FALSE)
 
 # Matrix of genes x cell types (normalized counts for SingleR "ref")
@@ -114,7 +127,7 @@ for (sample_name in sample_names) {
   sample_obj <- NormalizeData(sample_obj, assay = "Xenium", verbose = FALSE)
   
   # Extract log-normalized expression for the query (Xenium)
-  query_expr <- GetAssayData(sample_obj, slot = "data", assay = "Xenium")
+  query_expr <- GetAssayData(sample_obj, layer = "data", assay = "Xenium") # slot = "data"
   
   # Intersect genes between reference and query to match features
   # (Double subset avoids control probes like blank_codewords)
@@ -146,3 +159,74 @@ ST$SingleR_pruned_midfine <- all_pruned
 
 #visualize using methods discussed above
 #ensure to 'group.by = SingleR_pruned_midfine or SingleR_label_midfine
+
+# Run garbage collection to free up temporary RAM overhead
+gc()
+
+
+# Visualize the high-confidence annotations on one specific FOV
+ImageDimPlot(ST, 
+             fov = "X2fov",  # Change this to whichever FOV you want to inspect
+             group.by = "SingleR_pruned_midfine", 
+             size = 0.5, 
+             dark.background = TRUE)
+
+# Create a new column just to highlight unannotated cells
+ST$is_unannotated <- is.na(ST$SingleR_pruned_midfine)
+ImageDimPlot(ST, 
+             fov = "X2fov", 
+             group.by = "is_unannotated", 
+             cols = c("FALSE" = "grey", "TRUE" = "red"),
+             size = 0.5, 
+             dark.background = TRUE)
+
+# Create a proportional bar chart comparing left vs right, or region vs region
+ggplot(ST@meta.data, aes(x = orig.ident, fill = SingleR_pruned_midfine)) +
+  geom_bar(position = "fill") +
+  theme_minimal() +
+  labs(x = "Cortex Region / FOV", y = "Proportion of Cells", fill = "Cell Type") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# 1. Find the most highly variable genes in your dataset
+#ST <- FindVariableFeatures(ST, selection.method = "vst", nfeatures = 2000)
+
+# Normalize and run reductions
+ST <- SCTransform(ST, assay = "Xenium")
+
+ST <- RunPCA(ST, features = VariableFeatures(ST), npcs = 50, verbose = FALSE)
+
+ST <- FindNeighbors(ST, dims = 1:30)
+ST <- FindClusters(ST, resolution = 0.5)
+ST <- RunUMAP(ST, dims = 1:30)
+
+# Visualize the high-confidence annotations on one specific FOV
+ImageDimPlot(ST, 
+             fov = "X2fov",  # Change this to whichever FOV you want to inspect
+             group.by = "SingleR_pruned_midfine", 
+             size = 0.5, 
+             dark.background = TRUE)
+
+# Create a new column just to highlight unannotated cells
+ST$is_unannotated <- is.na(ST$SingleR_pruned_midfine)
+ImageDimPlot(ST, 
+             fov = "X2fov", 
+             group.by = "is_unannotated", 
+             cols = c("FALSE" = "grey", "TRUE" = "red"),
+             size = 0.5, 
+             dark.background = TRUE)
+
+# Project the spatial annotations onto the UMAP embeddings
+DimPlot(ST, 
+        reduction = "umap", 
+        group.by = "SingleR_pruned_midfine", 
+        label = TRUE, 
+        repel = TRUE) + 
+  ggtitle("SingleR Annotations on UMAP")
+
+# Create a proportional bar chart comparing left vs right, or region vs region
+ggplot(ST@meta.data, aes(x = orig.ident, fill = SingleR_pruned_midfine)) +
+  geom_bar(position = "fill") +
+  theme_minimal() +
+  labs(x = "Cortex Region / FOV", y = "Proportion of Cells", fill = "Cell Type") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+

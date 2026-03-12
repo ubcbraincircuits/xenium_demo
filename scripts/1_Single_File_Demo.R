@@ -2,7 +2,7 @@
 library(here)             
 library(data.table)
 library(arrow)
-
+  
 ## Data Manipulation
 library(dplyr)            
 library(tidyverse)        
@@ -60,19 +60,29 @@ Mouse_obj<-readRDS("Region_2_right-obj.rds")
 Mouse_obj <- UpdateSeuratObject(Mouse_obj)
 
 
-# check ident and fov
-table(Mouse_obj$orig.ident)
-unique(Mouse_obj$orig.ident)
-
-#Declare condition/Age or other categories before assigning them
-Mouse_obj$Condition <- "Unknown"
-#Mouse_obj$Condition[Mouse_obj$orig.ident %in% ("M_70")] <- "MAID"
-
 # Start by analyzing one sample at a time to understand the workflow and your data
 
 # ------------------------------------------------------------------
 # Single-Sample Analysis Workflow (QC, SCTransform, PCA, UMAP, Clustering)
 # ------------------------------------------------------------------
+
+
+
+
+# check ident and fov
+table(Mouse_obj$orig.ident)
+unique(Mouse_obj$orig.ident)
+
+#Declare information like condition/Age or other categories before assigning them
+Mouse_obj$Condition <- "Unknown"
+#Mouse_obj$Condition[Mouse_obj$orig.ident %in% ("M_70")] <- "MAID"
+
+
+
+# Other information is also included in:
+# Mouse_obj@misc#run_metadata
+# Run the above to see, or run View(Mouse_obj) to navigate the object.
+
 
 ## Preliminary analysis
 
@@ -116,7 +126,7 @@ VlnPlot(Mouse_obj, features = c("nFeature_Xenium", "nCount_Xenium"), ncol = 2, p
 #Mouse_obj_filtered <- subset(Mouse_obj, subset = nFeature_Xenium > 0 & nCount_Xenium > 0)
 
 
-
+# View statistics of the object 
 #n_genes <- dim(Mouse_obj)[1]
 #n_cells <- dim(Mouse_obj)[2]
 
@@ -124,8 +134,6 @@ VlnPlot(Mouse_obj, features = c("nFeature_Xenium", "nCount_Xenium"), ncol = 2, p
 # 2. Normalization and Feature Selection with SCTransform
 # SCTransform performs normalization, variance stabilization, and identifies variable features
 Mouse_obj <- SCTransform(Mouse_obj, assay = "Xenium")
-
-#TBI <- SCTransform(TBI, assay = "Xenium")
 
 #You can choose the normalization method and other details this way:
 # 02_run_seurat.R lines 11-109
@@ -167,8 +175,10 @@ residualVarPlot <- function(gene_var, xaxis = "gmean", max_resvar = 100, ntop = 
   return(p)
 }
 
-# test normalization by plotting residual vs size of chart
-# working on charting
+# test normalization by plotting "residual variance" vs "gene expression" 
+# SCTResults is a way to pull data from SCTAssay object:
+# documentation: https://satijalab.org/seurat/reference/sctresults#:~:text=Arguments,just%20returns%20the%20slot%20directly).
+
 gene_attr_maid <- SCTResults(Mouse_obj, slot = "feature.attributes", assay = "SCT")
 # gene_attr_tbi <- SCTResults(Mouse_obj, slot = "feature.attributes", assay = "SCT")
 
