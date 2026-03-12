@@ -1,3 +1,4 @@
+![](Resources/CAN_Satellite_2026_Poster.png)
 
 # Prerequisites and Installation
 
@@ -11,7 +12,7 @@ And run the installer.
 - Ensure your system has at least 8GB of memory, though 16GB or more is highly recommended.
 
 - Download the required UBC data objects (.rds files) from this OSF link under the Data folder [here](https://osf.io/rgajd/files/osfstorage).
-And place it in the directory of your choice.
+And place it in the directory of your choice. 
 
 ---
 
