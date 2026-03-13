@@ -214,13 +214,23 @@ ElbowPlot(Mouse_obj, ndims = 50)
 DimHeatmap(Mouse_obj, dims = 1:12, cells = 500, balanced = TRUE)
 
 
+# 4. Clustering
+# Identify clusters
+# - resolution: higher => more clusters
+Mouse_obj <- FindNeighbors(Mouse_obj, dims = 1:24)
+Mouse_obj <- FindClusters(Mouse_obj, resolution = 0.1)
 
-# 4. Non-linear Embedding: UMAP
+
+ImageDimPlot(Mouse_obj, fov = "X8fov", cols = Mouse_obj@misc$cluster_colors, size = 0.5, border.size = NA,
+axes = TRUE, dark.background = TRUE) + DarkTheme()
+ImageDimPlot(Mouse_obj, molecules = "Slc17a7", nmols = 10000, alpha = 0.3, mols.cols = "red")
+
+# 5. Non-linear Embedding: UMAP
 # UMAP parameters:
 # - dims: PCs to include (e.g., 1:20)
 
-Mouse_obj <- FindNeighbors(Mouse_obj, dims = 1:24)
-Mouse_obj <- FindClusters(Mouse_obj, resolution = 0.1)
+#Mouse_obj <- FindNeighbors(Mouse_obj, dims = 1:24)
+#Mouse_obj <- FindClusters(Mouse_obj, resolution = 0.1)
 Mouse_obj <- RunUMAP(Mouse_obj, dims = 1:24)
 
 
@@ -247,7 +257,7 @@ Mouse_obj@misc$cluster_colors <- cluster_colors
 Idents(Mouse_obj) <- factor(Idents(Mouse_obj), levels = global_clusters)
 
 #Plot UMAP (recommend adding PC and resol into the title to keep track of diff umaps)
-DimPlot(Mouse_obj, group.by = "seurat_clusters", 
+DimPlot(Mouse_obj, #group.by = "seurat_clusters", 
         reduction = "umap",
         cols = Mouse_obj@misc$cluster_colors) + DarkTheme() + coord_fixed() + ggtitle("UMAP REDUCTION")
 
@@ -258,35 +268,35 @@ DimPlot(Mouse_obj, group.by = "seurat_clusters",
 
 
 
-# 5. Clustering
-# Identify clusters
-
-# - resolution: higher => more clusters
-Mouse_Neighbors <- FindNeighbors(Mouse_obj, dims = 1:20)
-Mouse_Clustered <- FindClusters(Mouse_Neighbors, resolution = 0.1)
+# You can Also cluster into independent objects to discern different processing techniques
+#Mouse_Neighbors <- FindNeighbors(Mouse_obj, dims = 1:20)
+#Mouse_Clustered <- FindClusters(Mouse_Neighbors, resolution = 0.1)
 
 
-#ImageDimPlot(Mouse_Clustered, fov = "M1", cols = Mouse_obj@misc$cluster_colors, size = 0.5, border.size = NA,
+# ImageDimPlot(Mouse_Clustered, fov = "M1", cols = Mouse_obj@misc$cluster_colors, size = 0.5, border.size = NA,
 #axes = TRUE, dark.background = TRUE) + DarkTheme()
-ImageDimPlot(Mouse_Clustered, molecules = "Slc17a7", nmols = 10000, alpha = 0.3, mols.cols = "red")
+# ImageDimPlot(Mouse_Clustered, molecules = "Slc17a7", nmols = 10000, alpha = 0.3, mols.cols = "red")
 
 # Note: After running SCTransform, it sets the active assay to "SCT" (normalized data).
 # For FeaturePlots() and VlnPlots() plot raw Xenium counts, temporarily switch the default assay.
-DefaultAssay(Mouse_Clustered) <- "Xenium"
+# DefaultAssay(Mouse_Clustered) <- "Xenium"
+
+
+
 #FeaturePlot: gene expression in UMAP space 
-FeaturePlot(Mouse_obj, features = c("Aqp4"), label = TRUE)
+FeaturePlot(Mouse_obj, features = c("Aqp4"), label = TRUE,)
 
 #Violin Plot of raw counts (optional: set log = TRUE for log scale)
-VlnPlot(Mouse_obj, features = c("Slc17a7", "Gfap", "Sla"), pt.size = 0, log = TRUE)
+VlnPlot(Mouse_obj, features = c("Slc17a7", "Gfap", "Sla"), pt.size = 0, log = TRUE,)
 #uses the polychrome colours
-VlnPlot_scCustom(Mouse_obj, features = c("Slc17a7", "Gfap", "Sla"), pt.size = 0, log = TRUE)
+VlnPlot_scCustom(Mouse_obj, features = c("Slc17a7", "Gfap", "Sla"), pt.size = 0, log = TRUE,)
 
 DotPlot(object = Mouse_obj, features = c("Aqp4", "Paqr5", "Trem2"), dot.min  = 0.1,
         dot.scale= 6, group.by = "nFeature_Xenium") +
   scale_color_gradientn(colors = c("steelblue", "white", "firebrick")) +
   theme_classic() + ggtitle("") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        axis.text.y = element_text(size = 8))
+        axis.text.y = element_text(size = 8),)
 ImageFeaturePlot(Mouse_obj, fov = "X8fov", features = c("Aqp4", "Paqr5", "Trem2"))
 #for single gene
 ImageFeaturePlot(Mouse_obj, fov = "X8fov", features = ("Slc17a7"))
@@ -331,9 +341,9 @@ obj_sub <- subset(Mouse_obj, idents = c(0, 2, 4, 6))
 
 #Quick spatial check to confirm cropping
 ImageDimPlot(obj_sub, fov = "X8fov", cols = Mouse_obj@misc$cluster_colors, size = 0.5, border.size = NA,
-             axes = TRUE, dark.background = TRUE) + DarkTheme() 
+             axes = TRUE, dark.background = TRUE) + DarkTheme()
 ImageDimPlot(Mouse_obj, fov = "X8fov", cols = Mouse_obj@misc$cluster_colors, size = 0.5, border.size = NA,
-             axes = TRUE, dark.background = TRUE) + DarkTheme() 
+             axes = TRUE, dark.background = TRUE) + DarkTheme()
 
 ##Once you have your subset using  any one of the options above, you can perform steps 1-7 as above
 # Before re-running SCTransform on the refined subset, switch default assay

@@ -1,6 +1,6 @@
 ![](Resources/CAN_Satellite_2026_Poster.png)
 
-# Prerequisites and Installation
+# **Prerequisites and Installation**
 
 To get started, you will need to install the required software and download the necessary data. It is important to install R before installing RStudio so that RStudio can automatically detect your R installation.
 
@@ -16,7 +16,7 @@ And place it in the directory of your choice.
 
 ---
 
-## Overview
+## **Overview**
 
 TODO: The goal is not just to run code, but to **explain why each step exists** and what decisions users should think about during analysis.
 ```
@@ -33,7 +33,7 @@ TODO: The goal is not just to run code, but to **explain why each step exists** 
 
 
 ---
-## Open in Rstudio
+## **Open in Rstudio**
 
 To download and open the repo in Rstudio, do the following: 
 
@@ -53,6 +53,8 @@ Then, to begin demo:
 
 - Navigate to the scripts directory
 - Follow the scripts in numbered order
+
+> NOTE: Make sure to run 0_Load_Packages.R before the workshop begins
 
 
 
