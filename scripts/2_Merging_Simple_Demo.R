@@ -6,9 +6,9 @@ library(arrow)
 ## Data Manipulation
 library(dplyr)            
 library(tidyverse)        
+
 ## Spatial & Single-Cell Processing
 library(Seurat) #latest version - v5          
-# library(SeuratExtend)     #could'nt locate package
 library(spacexr)          
 library(glmGamPoi)        
 
@@ -16,6 +16,7 @@ library(glmGamPoi)
 library(harmony)          
 
 ## Visualization
+library(ggrepel)
 library(ggplot2)          
 library(patchwork)        
 library(RColorBrewer)     
@@ -41,7 +42,7 @@ options(future.globals.maxSize = 250000 * 1024^2)
 # Set the working directory to the folder containing your saved RDS objects
 setwd("D:/work/Github_demo/xenium_demo/Data")
 
-#############SECTION: MERGING DATA##################################################
+############# SECTION: MERGING DATA##################################################
 
 # ------------------------------------------------------------------
 # Multi-Sample Merge Example (Using raw RDS, unprocessed data)
@@ -56,55 +57,21 @@ Mouse_4L_obj <- UpdateSeuratObject(Mouse_4L_obj)
 Mouse_5L_obj <-readRDS("Region_5_left-obj.rds")
 Mouse_5L_obj <- UpdateSeuratObject(Mouse_5L_obj)
 
-
+# set fov's
+# By manually creating an orig.ident column in the metadata and filling it with the FOV name you create
+# a text label that links every individual cell's data profile to the physical tissue slice it came from
+# which will help us differentiate them in downstream analysis
 Mouse_2L_obj$orig.ident <- "X2_fov"
 Mouse_3L_obj$orig.ident <- "X3_fov"
 Mouse_4L_obj$orig.ident <- "X4_fov"
 Mouse_5L_obj$orig.ident <- "X5_fov"
 
-#MAID <-readRDS("M_70_Seurat_obj.rds")
-#MAID <- UpdateSeuratObject(MAID)
-#TBI <-readRDS("M_38_Seurat_obj.rds")
-#TBI <- UpdateSeuratObject(TBI)
-#SEPSIS <-readRDS("M_56_Seurat_obj.rds")
-#SEPSIS <- UpdateSeuratObject(SEPSIS)
-#HIBI <-readRDS("M_44_Seurat_obj.rds")
-#HIBI <- UpdateSeuratObject(HIBI)
-
-#assign orig IDs (FOVs from Xenium run)
-#MAID$orig.ident <- "M_70"
-#TBI$orig.ident <- "M_38"
-#SEPSIS$orig.ident <- "M_56"
-#HIBI$orig.ident <- "M_44"
-
-##Add metadata columns for your conditions (e.g. developmental stage, sex, disease state etc)
-#example here is Sex, but you can add several columns as needed
-# Initialize a new metadata column 'Sex' with NA values for all cells
-#merged_obj$Sex <- NA
-
-# Assign 'Female' to cells from sample F1 and 'Male' to cells from sample M1 and M2
-# This works by selecting cells where orig.ident matches the sample ID
-#merged_obj$Sex[merged_obj$orig.ident %in% c("M1", "M2")] <- "Male"
-#merged_obj$Sex[merged_obj$orig.ident %in% c("F1"] <- "Female"
 
 # Merge samples using add.cell.ids to prefix cell barcodes
 merged_obj <- merge(
   x = Mouse_2L_obj,
   y = list(Mouse_3L_obj, Mouse_4L_obj, Mouse_5L_obj),
   add.cell.ids = c("Region_2_left", "Region_3_left", "Region_4_left", "Region_5_left"))  
-
-#merged_obj <- merge(
-#  x = MAID,
-#  y = list(TBI, SEPSIS, HIBI),
-#  add.cell.ids = c("MAID", "TBI", "SEPSIS", "HIBI"))  
-
-# Verify orig.ident values in metadata (should reflect FOV names assigned in Xenium Analyzer)
-# - unique(): shows which categories are present
-unique(merged_obj$orig.ident)
-
-#to check if cell counts per sample are ok
-# - table(): gives counts of each category to ensure all groups are represented
-table(merged_obj$orig.ident)
 
 #to save merged obj as rds
 saveRDS(merged_obj, "merged_raw_obj.rds")
@@ -113,50 +80,28 @@ saveRDS(merged_obj, "merged_raw_obj.rds")
 #to recall obj later
 merged_obj <- readRDS("merged_raw_obj.rds") #"merged_raw_obj.rds"
 
+
 ##Add metadata columns for your conditions (e.g. developmental stage, sex, disease state etc)
-#example here is Sex, but you can add several columns as needed
-# Initialize a new metadata column 'Sex' with NA values for all cells
-#merged_obj$Sex <- NA
+#example here is Orientation, but you can add several columns as needed
+# Initialize a new metadata column 'Orientation' with NA values for all cells
+merged_obj$Orientation <- NA
 
-# Assign 'Female' to cells from sample F1 and 'Male' to cells from sample M1 and M2
+# Assign 'Left' to cells from sample X2_fov, X3_fov, X4_fov, X5_fov and 'Right' to cells from sample ...
+# Note samples from Right region are not included here with regard to resources
 # This works by selecting cells where orig.ident matches the sample ID
-#merged_obj$Sex[merged_obj$orig.ident %in% c("M1", "M2")] <- "Male"
+merged_obj$Orientation[merged_obj$orig.ident %in% c("X2_fov", "X3_fov")] <- "Left"
+#merged_obj$Orientation[merged_obj$orig.ident %in% c("X7_fov"] <- "Right"
 
-# Simple check of 'Sex' metadata column values
-# - unique(): shows which categories are present (expect "Male" and "Female")
-# - table(): gives counts of each category to ensure both groups are represented
-#unique(merged_obj$Sex)
-# Count each category
-#table(merged_obj$Sex)
+# Verify orig.ident values in metadata (should reflect FOV names assigned in Xenium Analyzer)
+# - unique(): shows which categories are present
+unique(merged_obj$orig.ident)
+unique(merged_obj$Orientation)
 
+#to check if cell counts per sample are ok
+# - table(): gives counts of each category to ensure all groups are represented
+table(merged_obj$orig.ident)
+table(merged_obj$Orientation)
 
-#my metadata (for the first run) is condition type (TBI, MAID, Sepsis, HIBI), age at death
-merged_obj$Condition <- NA
-merged_obj$DeathAge <- NA
-
-# Assign 'condition or age' to cells from respective cases 
-# This works by selecting cells where orig.ident matches the sample IDs
-#orig IDs are changed to FOV, so use that names
-#merged_obj$DeathAge[merged_obj$orig.ident %in% ("M_70")] <- "37"
-#merged_obj$DeathAge[merged_obj$orig.ident %in% ("M_38")] <- "58"
-#merged_obj$DeathAge[merged_obj$orig.ident %in% ("M_56")] <- "68"
-#merged_obj$DeathAge[merged_obj$orig.ident %in% ("M_44")] <- "74"
-
-#merged_obj$Condition[merged_obj$orig.ident %in% ("M_70")] <- "MAID"
-#merged_obj$Condition[merged_obj$orig.ident %in% ("M_38")] <- "TBI"
-#merged_obj$Condition[merged_obj$orig.ident %in% ("M_56")] <- "Sepsis"
-#merged_obj$Condition[merged_obj$orig.ident %in% ("M_44")] <- "HIBI"
-
-# Simple check of 'Condition' metadata column values
-# - unique(): shows which categories are present 
-# - table(): gives counts of each category to ensure both groups are represented
-unique(merged_obj$Condition)
-# Count each category
-table(merged_obj$Condition)
-
-unique(merged_obj$DeathAge)
-# Count each category
-table(merged_obj$DeathAge)
 
 #to save merged obj that contains metadata as rds
 saveRDS(merged_obj, "merged_raw_metadata_obj.rds")
@@ -168,26 +113,23 @@ saveRDS(merged_obj, "merged_raw_metadata_obj.rds")
 #QC, SCTransform, PCA, UMAP, Clustering - same as Single-Sample Analysis Workflow but done on the merged file
 # ------------------------------------------------------------------
 #
+# Clear memory from previous objects
+rm(list = ls())
+gc()
 
-#to recall merged file 
+# Recall merged file 
 merged_obj <- readRDS("merged_raw_metadata_obj.rds")
 
 # 1. Quality Control 
 # Visualize QC metrics
-# - nFeature_Xenium: number of unique transcript features detected per cell (i.e., how many genes/transcripts)
-# - nCount_Xenium: total transcript count per cell (sum of all detected transcript counts)
 
-#quality control - feature means total genes picked which can be less than 
-#the total panel genes 266 predesigned (human v1) + 100 custom (Kraus) 
-# as some genes might not be expressed in our sample. 
-#Count refer to number of transcripts for all the genes.
 
 VlnPlot(merged_obj, features = c("nFeature_Xenium", "nCount_Xenium"), ncol = 2, pt.size =0)
 
 # Filter cells based on QC thresholds (only if subsetting is needed e.g. for a region or transcripts of a specific size)
 merged_obj <- subset(merged_obj, subset = nFeature_Xenium > 5 & nCount_Xenium > 0) 
 
-#make Vln plot again
+# make Vln plot again
 VlnPlot(merged_obj, features = c("nFeature_Xenium", "nCount_Xenium"), ncol = 2, pt.size =0)
 
 # 2. Normalization and Feature Selection with SCTransform
@@ -208,6 +150,13 @@ Reductions(merged_obj)
 
 # Option 1: Examine ElbowPlot to choose how many PCs to use downstream
 ElbowPlot(merged_obj, ndims = 50) 
+
+# Option 2: PCA Heatmap (can also create these heatmaps after selecting the PCA above)
+# - Use DimHeatmap() to visualize the top features (genes) driving each PC.
+# - Adjust 'dims' to specify which PCs to examine; 'cells' controls how many cells to display per PC.
+# - 'balanced = TRUE' scales positive and negative loadings equally.
+DimHeatmap(merged_obj, dims = 1:12, cells = 50, balanced = TRUE)
+
 
 #Larissa's loop for testing resolution and dims for best selection
 dim_reso_test <- function(dataset, dims_list, resolutions, output_dir, red, group_vars) {
@@ -261,44 +210,39 @@ dim_reso_test <- function(dataset, dims_list, resolutions, output_dir, red, grou
     }
   }
 }
-# Run the automated test
-#dim_reso_test(
-#  dataset = merged_obj,
-#  dims_list = list(1:20, 1:30, 1:40, 1:50),  # test PC ranges
-#  resolutions = c(0.1, 0.4, 0.8),    # test resolutions
-#  # "Z:/Wellington Lab/Mehwish/Xenium_human_run1/B_HumanXenium_Run1_OG_rds"
-#  output_dir = "D:/work/Xenium/Output", # where to save PDFs
-#  red = "pca",             # dimensionality reduction to use
-#  group_vars = c("orig.ident", "Condition")  # metadata for coloring
-#)
+
+
+# Run the automated test at desired dimension and resolution settings and examine results
+dim_reso_test(
+  dataset = merged_obj,
+  dims_list = list(1:20, 1:30, 1:40),  # test PC ranges
+  resolutions = c(0.1, 0.4),    # test resolutions
+  # "Z:/Wellington Lab/Mehwish/Xenium_human_run1/B_HumanXenium_Run1_OG_rds"
+  output_dir = "D:/work/Xenium/Output", # where to save PDFs
+  red = "pca",             # dimensionality reduction to use
+  group_vars = c("orig.ident", "Orientation")  # metadata for coloring
+)
+
 
 #Choose best PC/resolution combo from PDFs and then rerun on main object
-merged_obj <- FindNeighbors(merged_obj, dims = 1:30, reduction = "pca")
-merged_obj <- FindClusters(merged_obj, resolution = 0.3)
-merged_obj <- RunUMAP(merged_obj, dims = 1:30, reduction = "pca")
-
-"GFAP" %in% rownames(merged_obj)
-FeaturePlot(merged_obj, features = "Slc17a7")
-
-# Option 2: PCA Heatmap (can also create these heatmaps after selecting the PCA above)
-# - Use DimHeatmap() to visualize the top features (genes) driving each PC.
-# - Adjust 'dims' to specify which PCs to examine; 'cells' controls how many cells to display per PC.
-# - 'balanced = TRUE' scales positive and negative loadings equally.
-DimHeatmap(merged_obj, dims = 1:30, cells = 500, balanced = TRUE)
 
 
-
-# 4. Non-linear Embedding: UMAP
-# UMAP parameters:
-# - dims: PCs to include (e.g., 1:20)
-merged_obj <- RunUMAP(merged_obj, dims = 1:30)
-
-# 5. Clustering
+# 4. Clustering
 # Identify clusters
 # - resolution: higher => more clusters
 merged_obj <- FindNeighbors(merged_obj, dims = 1:30)
 merged_obj <- FindClusters(merged_obj, resolution = 0.3)
 
+
+# 5. Non-linear Embedding: UMAP
+# UMAP parameters:
+# - dims: PCs to include (e.g., 1:20)
+merged_obj <- RunUMAP(merged_obj, dims = 1:30)
+
+
+# 6.Visualizations
+
+# Standardising colors
 # Get all cluster IDs
 global_clusters <- levels(Idents(merged_obj))
 n <- length(global_clusters)

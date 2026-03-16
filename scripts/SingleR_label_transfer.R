@@ -69,7 +69,10 @@ ST <- readRDS("merged_obj.rds")
 dat <- ST #cortical_ST
 
 # single cell data (reference)
-sc.ref <- readRDS("allen_cortex.rds") #from this link: https://support.10xgenomics.com/spatial-gene-expression/datasets
+sc.ref <- readRDS("allen_cortex.rds") 
+# from this link: https://satijalab.org/seurat/archive/v3.2/spatial_vignette.html 
+# and this data: https://www.dropbox.com/s/cuowvm4vrf65pvq/allen_cortex.rds?dl=1
+
 
 # Xenium data
 #dat <- readRDS("merged_obj.rds") 
@@ -79,7 +82,7 @@ gc()
 
 
 # quick checks on reference annotations and assays
-#unique(sc.ref$majorcelltype)
+#unique(sc.ref$majorcelltype) # Allen_cortex reference uses subclass
 unique(sc.ref$subclass)
 Assays(sc.ref)
 
@@ -163,6 +166,11 @@ ST$SingleR_pruned_midfine <- all_pruned
 # Run garbage collection to free up temporary RAM overhead
 gc()
 
+## Note adjust fov to whatever you want to visualize!!
+# find fov's using:
+
+Images(ST) # or use names(obj@images)
+
 
 # Visualize the high-confidence annotations on one specific FOV
 ImageDimPlot(ST, 
@@ -187,7 +195,7 @@ ggplot(ST@meta.data, aes(x = orig.ident, fill = SingleR_pruned_midfine)) +
   labs(x = "Cortex Region / FOV", y = "Proportion of Cells", fill = "Cell Type") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-# 1. Find the most highly variable genes in your dataset
+# Normalize, cluster and Dim reduction
 #ST <- FindVariableFeatures(ST, selection.method = "vst", nfeatures = 2000)
 
 # Normalize and run reductions

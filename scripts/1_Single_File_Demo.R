@@ -5,10 +5,10 @@ library(arrow)
   
 ## Data Manipulation
 library(dplyr)            
-library(tidyverse)        
+library(tidyverse)    
+
 ## Spatial & Single-Cell Processing
 library(Seurat) #latest version - v5          
-# library(SeuratExtend)     #could'nt locate package
 library(spacexr)          
 library(glmGamPoi)        
 
@@ -38,7 +38,7 @@ library(purrr)
 options(future.globals.maxSize = 250000 * 1024^2)
 
 
-####### LOAD IN RDS OBJECTS, PERFORM QUALITY CONTROL, NORMALIZE DATA, DIMENTIONALITY REDUCTION AND CLUSTERING ###########
+####### SECTION:  LOAD IN RDS OBJECTS, PERFORM QUALITY CONTROL, NORMALIZE DATA, DIMENTIONALITY REDUCTION AND CLUSTERING ###########
 # ------------------------------------------------------------------
 # Important Note on Object Naming
 # ------------------------------------------------------------------
@@ -101,6 +101,13 @@ Images(Mouse_obj) # or use names(Mouse_obj@images)
 
 # 1. Quality Control
 # Visualize QC metrics
+# - nFeature_Xenium: number of unique transcript features detected per cell (i.e., how many genes/transcripts)
+# - nCount_Xenium: total transcript count per cell (sum of all detected transcript counts)
+
+# quality control - feature means total genes picked which can be less than 
+# the total panel genes 266 predesigned (human v1) + 100 custom (Kraus) 
+# as some genes might not be expressed in our sample. 
+# Count refer to number of transcripts for all the genes.
 
 ## Note that the data available has already been filtered for nFeature_Xenium > 0 & nCount_Xenium > 0
 
