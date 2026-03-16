@@ -16,6 +16,7 @@ library(glmGamPoi)
 library(harmony)          
 
 ## Visualization
+library(ggrepel)
 library(ggplot2)          
 library(patchwork)        
 library(RColorBrewer)     
@@ -67,19 +68,31 @@ Mouse_obj <- UpdateSeuratObject(Mouse_obj)
 # ------------------------------------------------------------------
 
 
+# In a standard single-cell RNA-seq Seurat object, you only have matrices of cells and genes.
+# However, in a spatial Seurat object, you need a place to store physical coordinates.
+# Seurat created the @images slot specifically to hold FOV objects.
+
+# The fov object is a container for storing coordinates of spatially-resolved single cells.
+# Capable of storing multiple cell segmentation boundary masks.
+
+# Your Seurat object might have one FOV, or it might contain many of distinct FOVs if 
+# you imaged multiple separate regions of interest (like different brain regions) on the same slide
+
+# check fov names:
+Images(Mouse_obj) # or use names(Mouse_obj@images)
 
 
-# check ident and fov
-table(Mouse_obj$orig.ident)
-unique(Mouse_obj$orig.ident)
+# You can add additional fields to the seurat object including supplementary information such as metadata.
 
-#Declare information like condition/Age or other categories before assigning them
-Mouse_obj$Condition <- "Unknown"
-#Mouse_obj$Condition[Mouse_obj$orig.ident %in% ("M_70")] <- "MAID"
+# To include this, you must first Declare field name like condition/Age or other categories
+#Mouse_obj$Condition <- "Unknown"
+
+# Then assign a value to that field
+#Mouse_obj$Condition[Mouse_obj$orig.ident %in% ("x8fov")] <- "MAID"
 
 
 
-# Metadata information is also included under:
+# Metadata information for the given data is also already included under:
 # Mouse_obj@misc#run_metadata
 # Run the above to see, or run View(Mouse_obj) to navigate the object.
 
@@ -88,6 +101,8 @@ Mouse_obj$Condition <- "Unknown"
 
 # 1. Quality Control
 # Visualize QC metrics
+
+## Note that the data available has already been filtered for nFeature_Xenium > 0 & nCount_Xenium > 0
 
 # Histogram 
 # - nFeature_Xenium: number of unique transcript features detected per cell (i.e., how many genes/transcripts)
@@ -118,6 +133,7 @@ VlnPlot(Mouse_obj, features = c("nFeature_Xenium", "nCount_Xenium"), ncol = 2, p
 
 
 
+
 # Filter cells based on QC thresholds
 #Mouse_obj <- subset(Mouse_obj, subset = nFeature_Xenium > 2 & nCount_Xenium > 0) 
 # Note: to compare multiple QC filters for downstream analysis
@@ -133,6 +149,8 @@ VlnPlot(Mouse_obj, features = c("nFeature_Xenium", "nCount_Xenium"), ncol = 2, p
 
 # 2. Normalization and Feature Selection with SCTransform
 # SCTransform performs normalization, variance stabilization, and identifies variable features
+# Variance stabilization aims to remove technical variation (such as sequencing depth differences) 
+# while preserving biological variance. This makes the data more comparable across cells.
 Mouse_obj <- SCTransform(Mouse_obj, assay = "Xenium")
 
 #You can choose the normalization method and other details this way:
@@ -140,7 +158,16 @@ Mouse_obj <- SCTransform(Mouse_obj, assay = "Xenium")
 # Link to documentation on SCTransform: https://satijalab.org/seurat/articles/sctransform_vignette.html
 # Link to paper on SCTransform: https://link.springer.com/article/10.1186/s13059-021-02584-9
 
-# function to plot residual variance vs gene expression 
+
+# function to plot residual variance vs gene expression:  to visualize variance stabilization
+# - gene_var:   The data frame containing gene attributes. 
+# - xaxis:      (Default: "gmean") The name of the column to plot on the x-axis.
+#               (gmean: geometric mean of gene expression.) 
+# - max_resvar: The maximum limit for the y-axis (residual variance). (Default: 100) 
+# - ntop:       (Default: 20) The number of top most variable genes to highlight. 
+# - annotate:   (Default: FALSE). If set to TRUE, 
+#               the function will draw text labels (gene names) next to the 'ntop' highlighted genes.
+# - pt_size:    (Default: 1.1) The size of the dots drawn on the scatter plot.
 residualVarPlot <- function(gene_var, xaxis = "gmean", max_resvar = 100, ntop = 20, annotate = F, pt_size = 1.1) {
   gene_var$gene <- rownames(gene_var)
   topn <- subset(gene_var, rank(-gene_var[, "residual_variance"]) <= ntop)$gene
@@ -153,15 +180,14 @@ residualVarPlot <- function(gene_var, xaxis = "gmean", max_resvar = 100, ntop = 
     scale_y_continuous(trans = "sqrt", breaks = c(0, 1, 10, 25, 50, 100, 150), limits = c(0, max_resvar + 1)) +
     scale_x_continuous(trans = "log10", breaks = c(0.001, 0.01, 0.1, 1, 10, 100), labels = MASS::rational) + #, 100
     # facet_wrap(~ model, ncol=3, scales = 'free_y') +
-    xlab("Gene mean") +
+    xlab("Gene mean expression") +
     ylab("Residual variance")
   if (annotate) {
     p <- p + geom_text_repel(
       data = subset(gene_var, gene %in% topn), aes(label = gene), color = "gray25",
       size = 1.8,
-      nudge_y = 230 - subset(gene_var, gene %in% topn)[, col],
       direction = "x",
-      angle = 90,
+      #angle = 90,
       vjust = 0.5,
       hjust = 0.5,
       segment.size = 0.2,
@@ -178,27 +204,26 @@ residualVarPlot <- function(gene_var, xaxis = "gmean", max_resvar = 100, ntop = 
 # test normalization by plotting "residual variance" vs "gene expression" 
 # SCTResults is a way to pull data from SCTAssay object:
 # documentation: https://satijalab.org/seurat/reference/sctresults#:~:text=Arguments,just%20returns%20the%20slot%20directly).
+gene_attr_mouse <- SCTResults(Mouse_obj, slot = "feature.attributes", assay = "SCT")
 
-gene_attr_maid <- SCTResults(Mouse_obj, slot = "feature.attributes", assay = "SCT")
-
-residualVarPlot(gene_attr_maid, max_resvar = 10, pt_size = 4)
-
-
+residualVarPlot(gene_attr_mouse, max_resvar = 10, pt_size = 3, annotate = T)
 
 # 3. Dimensionality Reduction: PCA
-# PCA reduces high-dimensional data to principal components
+# PCA reduces high-dimensional data to principal components with highest explained variance 
 # - features: use VariableFeatures from SCTransform
 # - npcs: number of PCs to compute (e.g., 50)
 # - Balance is Key: 
 # - Including more PCs captures more variation in the data, but may introduce noise.
 # - Including fewer PCs reduces noise but may risk missing important biological signals.
 
+# For an intuitive explanation of PCA, see this StatQuest video: https://www.youtube.com/watch?v=FgakZw6K1QQ
+
 Mouse_obj <- RunPCA(Mouse_obj, features = VariableFeatures(Mouse_obj), npcs = 50, verbose = FALSE)
 
 
 # Option 1: Examine ElbowPlot to choose how many PCs to use downstream
 
-# In this dataset, the elbow appears around PCs 12-15. 
+# In this dataset, the elbow appears around PCs 15-25. 
 # This suggests that most of the biologically relevant variation is captured within the first set of components.
 # PC's after this point may be mostly noise. Lower PC dimensions may decrease this noise but could also miss
 # biologically relevant information.
@@ -215,9 +240,14 @@ DimHeatmap(Mouse_obj, dims = 1:12, cells = 500, balanced = TRUE)
 
 
 # 4. Clustering
-# Identify clusters
-# - resolution: higher => more clusters
+
+# FindNeighbors constructs a k-nearest neighbor (KNN) graph in the high-dimensional PCA space.
+# It refines the edge weights based on shared local neighborhoods, producing a Shared Nearest Neighbor (SNN) graph.
 Mouse_obj <- FindNeighbors(Mouse_obj, dims = 1:24)
+
+# FindClusters is a separate modularity optimization step (typically Louvain) applied to the SNN graph.
+# It groups cells into communities (clusters). This is an independent calculation from UMAP.
+# - resolution: higher => more clusters
 Mouse_obj <- FindClusters(Mouse_obj, resolution = 0.1)
 
 
@@ -227,14 +257,31 @@ ImageDimPlot(Mouse_obj, molecules = "Slc17a7", nmols = 10000, alpha = 0.3, mols.
 
 # 5. Non-linear Embedding: UMAP
 # UMAP parameters:
-# - dims: PCs to include (e.g., 1:20)
+# - dims: PCs to include (e.g., 1:24)
+# Note: By default, RunUMAP independently computes its own nearest-neighbor graph in the high-dimensional 
+# PCA space to estimate the manifold before mapping to the low-dimensional embedding. It does not use 
+# the SNN graph created by FindNeighbors unless explicitly instructed via the nn.name parameter.
 
-#Mouse_obj <- FindNeighbors(Mouse_obj, dims = 1:24)
-#Mouse_obj <- FindClusters(Mouse_obj, resolution = 0.1)
+# Please note that there exist more than 1 implementation of the UMAP alogorithm.
+# Seurat uses uwot (https://github.com/jlmelville/uwot) by default while there is a separate python implementation, 
+# To run using umap.method="umap-learn", you must first install the umap-learn python package
+# (e.g. via pip install umap-learn). For further details: https://github.com/lmcinnes/umap
+
+# While the results are generally comparable there will be specific differences, as 
+# shown here: https://github.com/satijalab/seurat/issues/2025. If you are trying to reproduce a 
+# calculation of a lab member or something from the literature you may need to use the same implementation
+# as the original calculation to ensure reproducibility.
+
+# For an intuitive explanation of UMAP, see this StatQuest video: https://www.youtube.com/watch?v=eN0wFzBA4Sc
+# paper on UMAP: https://arxiv.org/abs/1802.03426
+
 Mouse_obj <- RunUMAP(Mouse_obj, dims = 1:24)
 
 
-## Set single colour pallete
+# 6. Visualizations
+
+# Standardize colour identifiers for each cluster to ensure consistency across graphs
+
 # Get all cluster IDs
 global_clusters <- levels(Idents(Mouse_obj))
 n <- length(global_clusters)
@@ -283,23 +330,25 @@ DimPlot(Mouse_obj, #group.by = "seurat_clusters",
 
 
 
-#FeaturePlot: gene expression in UMAP space 
+# FeaturePlot: gene expression in UMAP space 
 FeaturePlot(Mouse_obj, features = c("Aqp4"), label = TRUE,)
 
-#Violin Plot of raw counts (optional: set log = TRUE for log scale)
-VlnPlot(Mouse_obj, features = c("Slc17a7", "Gfap", "Sla"), pt.size = 0, log = TRUE,)
-#uses the polychrome colours
-VlnPlot_scCustom(Mouse_obj, features = c("Slc17a7", "Gfap", "Sla"), pt.size = 0, log = TRUE,)
+# Gene expression in spatial coordinates
+ImageFeaturePlot(Mouse_obj, fov = "X8fov", features = c("Aqp4", "Paqr5", "Trem2"))
 
-DotPlot(object = Mouse_obj, features = c("Aqp4", "Paqr5", "Trem2"), dot.min  = 0.1,
-        dot.scale= 6, group.by = "nFeature_Xenium") +
+#for single gene
+ImageFeaturePlot(Mouse_obj, fov = "X8fov", features = ("Aqp4"))
+
+# Violin Plot of raw counts (optional: set log = TRUE for log scale)
+VlnPlot(Mouse_obj, features = c("Slc17a7", "Gfap"), pt.size = 0, log = TRUE,)
+
+# Summarize expression of selected genes across groups.
+DotPlot(object = Mouse_obj, features = c("Aqp4", "Gfap", "Sla", "Paqr5", "Trem2"), dot.min  = 0.1,
+        dot.scale= 6, group.by = "seurat_clusters") +
   scale_color_gradientn(colors = c("steelblue", "white", "firebrick")) +
   theme_classic() + ggtitle("") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
         axis.text.y = element_text(size = 8),)
-ImageFeaturePlot(Mouse_obj, fov = "X8fov", features = c("Aqp4", "Paqr5", "Trem2"))
-#for single gene
-ImageFeaturePlot(Mouse_obj, fov = "X8fov", features = ("Slc17a7"))
 
 
 
@@ -334,7 +383,7 @@ obj_sub <- subset(Mouse_obj, idents = c(0, 2, 4, 6))
 #  obj1_crop[["M_70"]], x = c(100, 2000), y = c(500, 3000))
 
 # Pull out all cell barcodes within that cropped region
-#keep_cells <- Cells(obj1_crop[["M_70"]])
+#keep_cells <- Cells(obj1_crop[["M_70"]]) 
 
 #Subset so that only those cropped cells remain
 #obj_sub <- subset(obj1_crop, cells = keep_cells)

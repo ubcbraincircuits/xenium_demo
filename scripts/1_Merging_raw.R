@@ -36,19 +36,8 @@ library(purrr)
 # Increase maximum future global size for handling large objects
 options(future.globals.maxSize = 250000 * 1024^2)
 
+####### LOAD IN RDS OBJECTS
 
-#######SECTION 2: LOAD IN RDS OBJECTS, PERFORM QUALITY CONTROL, NORMALIZE DATA, DIMENTIONALITY REDUCTION AND CLUSTERING###########
-# ------------------------------------------------------------------
-# Important Note on Object Naming
-# ------------------------------------------------------------------
-# When loading in your saved .rds files, avoid using the same
-# name as the FOV identifiers (the names you assigned to each field of view in the
-# Xenium Analyzer) or orig.ident values from Xenium. Using distinct names helps
-# prevent confusion and accidental overwriting.
-
-# ------------------------------------------------------------------
-# Example: Setting Working Directory and Reading an RDS File
-# ------------------------------------------------------------------
 # Set the working directory to the folder containing your saved RDS objects
 setwd("D:/work/Github_demo/xenium_demo/Data")
 
