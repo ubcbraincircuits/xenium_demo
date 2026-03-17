@@ -157,75 +157,10 @@ ElbowPlot(merged_obj, ndims = 50)
 # - 'balanced = TRUE' scales positive and negative loadings equally.
 DimHeatmap(merged_obj, dims = 1:12, cells = 50, balanced = TRUE)
 
-
-#Larissa's loop for testing resolution and dims for best selection
-dim_reso_test <- function(dataset, dims_list, resolutions, output_dir, red, group_vars) {
-  if (!dir.exists(output_dir)) {
-    dir.create(output_dir, recursive = TRUE)  
-  }
-  for (dims in dims_list) {
-    max_dim <- max(dims)
-    for (res in resolutions) {
-      dat_mod <- dataset 
-      dat_mod <- FindNeighbors(dat_mod, dims = dims, reduction = red)
-      dat_mod <- FindClusters(dat_mod, resolution = res)
-      dat_mod <- RunUMAP(dat_mod, dims = dims, reduction = red)
-      #assign colours
-      current_clusters <- levels(Idents(dat_mod))
-      # Generate distinct color palette (Polychrome handles up to 40–50 unique colors)
-      if (length(current_clusters) <= 36) {
-        palette <- Polychrome::palette36.colors(length(current_clusters))
-      } else {
-        # For >36 clusters, extend smoothly with hue palette
-        palette <- scales::hue_pal()(length(current_clusters))
-      }
-      plot_pal <- palette[1:length(current_clusters)]
-      names(plot_pal) <- current_clusters
-      
-      plots <- list(DimPlot(dat_mod, shuffle = TRUE, label = TRUE, cols = plot_pal) + coord_fixed())
-      for (group_var in group_vars) {
-        plots <- append(plots, list(DimPlot(dat_mod, group.by = group_var, shuffle = TRUE) + coord_fixed()))
-      }
-      # Create the vertical stack
-      combined_plot <- patchwork::wrap_plots(plots, ncol = 1)
-      
-      # Add the metadata title
-      plot_title <- paste("Dimensions:", max_dim, "| Resolution:", res)
-      combined_plot <- combined_plot + patchwork::plot_annotation(title = plot_title)
-      
-      # Define PNG file path
-      file_name <- paste0("Dim_", max_dim, "_Res_", res, ".png")
-      png_path <- file.path(output_dir, file_name)
-      
-      # Save the plot
-      # Height is dynamic based on number of plots; 300 DPI ensures crisp labels
-      ggplot2::ggsave(
-        filename = png_path,
-        plot = combined_plot,
-        width = 8,
-        height = 5 * length(plots),
-        dpi = 300,
-        limitsize = FALSE
-      )
-    }
-  }
-}
-
-
-# Run the automated test at desired dimension and resolution settings and examine results
-dim_reso_test(
-  dataset = merged_obj,
-  dims_list = list(1:20, 1:30, 1:40),  # test PC ranges
-  resolutions = c(0.1, 0.4),    # test resolutions
-  # "Z:/Wellington Lab/Mehwish/Xenium_human_run1/B_HumanXenium_Run1_OG_rds"
-  output_dir = "D:/work/Xenium/Output", # where to save PDFs
-  red = "pca",             # dimensionality reduction to use
-  group_vars = c("orig.ident", "Orientation")  # metadata for coloring
-)
-
-
-#Choose best PC/resolution combo from PDFs and then rerun on main object
-
+###############
+# Recommended follow Larissa's loop from previous script.
+# We skip that in interest of time
+###############
 
 # 4. Clustering
 # Identify clusters
@@ -264,7 +199,7 @@ merged_obj@misc$cluster_colors <- cluster_colors
 # Ensure Idents is a factor with consistent levels
 Idents(merged_obj) <- factor(Idents(merged_obj), levels = global_clusters)
 
-# --- Plot UMAPs with locked colors ---
+# Plot UMAPs
 DimPlot(
   merged_obj,
   reduction = "umap",
@@ -278,7 +213,7 @@ DimPlot(
   group.by = "Condition"
 ) + DarkTheme() + coord_fixed() + ggtitle("merged_obj")
 
-# --- Plot spatial FOV view with locked colors ---
+# Plot spatial FOV view
 ImageDimPlot(
   merged_obj,
   fov = "X3_fov",
@@ -288,6 +223,10 @@ ImageDimPlot(
   axes = TRUE,
   dark.background = TRUE
 ) + DarkTheme()
+
+
+# You can also perform subseting as discussed in previous section!
+
 
 
 
