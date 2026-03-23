@@ -35,8 +35,12 @@ library(purrr)
 # Increase maximum future global size for handling large objects
 options(future.globals.maxSize = 250000 * 1024^2)
 
+# First, once again lets clear old objects
+rm(list = ls())
+gc()
 
-#######SECTION 2: LOAD IN RDS OBJECTS, PERFORM QUALITY CONTROL, NORMALIZE DATA, DIMENTIONALITY REDUCTION AND CLUSTERING###########
+
+#######SECTION: LOAD IN RDS OBJECTS, PERFORM QUALITY CONTROL, NORMALIZE DATA, DIMENTIONALITY REDUCTION AND CLUSTERING###########
 # ------------------------------------------------------------------
 # Important Note on Object Naming
 # ------------------------------------------------------------------
@@ -49,24 +53,26 @@ options(future.globals.maxSize = 250000 * 1024^2)
 # Example: Setting Working Directory and Reading an RDS File
 # ------------------------------------------------------------------
 # Set the working directory to the folder containing your saved RDS objects
-setwd("D:/work/Xenium/Input_RDS") 
+setwd("D:/work/Github_demo/xenium_demo/Data") 
 
 # Load in the RDS object
-MAID_obj<-readRDS("M_70_Seurat_obj.rds")
+Mouse_obj<-readRDS("Region_2_right-obj.rds")
 # Update Seurat Objects to new structure for storing data/calculations. 
 # For Seurat v3 objects, will validate object structure ensuring all keys 
 # and feature names are formed properly.
-MAID_obj <- UpdateSeuratObject(MAID_obj)
+Mouse_obj <- UpdateSeuratObject(Mouse_obj)
 
-MAID_obj = SCTransform(MAID_obj, assay = "Xenium")
+Mouse_obj = SCTransform(Mouse_obj, assay = "Xenium")
 
 
-MAID_obj <- RunPCA(MAID_obj, features = VariableFeatures(MAID_obj), npcs = 50, verbose = FALSE)
-MAID_obj <- FindNeighbors(MAID_obj, dims = 1:20)
-MAID_obj <- FindClusters(MAID_obj, resolution = 0.1)
+Mouse_obj <- RunPCA(Mouse_obj, features = VariableFeatures(Mouse_obj), npcs = 50, verbose = FALSE)
+Mouse_obj <- FindNeighbors(Mouse_obj, dims = 1:24)
+Mouse_obj <- FindClusters(Mouse_obj, resolution = 0.1)
+
+Mouse_obj <- RunUMAP(Mouse_obj, dims = 1:24)
 
 # Assign global color pallete
-global_clusters <- levels(Idents(MAID_obj))
+global_clusters <- levels(Idents(Mouse_obj))
 n <- length(global_clusters)
 
 # Generate distinct color palette (Polychrome handles up to 40–50 unique colors)
@@ -81,12 +87,12 @@ if (n <= 36) {
 cluster_colors <- setNames(palette, global_clusters)
 
 # Store mapping for reproducibility
-MAID_obj@misc$cluster_colors <- cluster_colors
+Mouse_obj@misc$cluster_colors <- cluster_colors
 
 # Ensure Idents is a factor with consistent levels
-Idents(MAID_obj) <- factor(Idents(MAID_obj), levels = global_clusters)
+Idents(Mouse_obj) <- factor(Idents(Mouse_obj), levels = global_clusters)
 
-#############SECTION 5: DIFFERENTIAL GENE EXPRESSION (DEG) ANALYSIS#############################
+#############SECTION: DIFFERENTIAL GENE EXPRESSION (DEG) ANALYSIS #############################
 
 # There are two primary approaches to performing DEG analysis, depending on the 
 # resolution and robustness you require:
@@ -100,9 +106,13 @@ Idents(MAID_obj) <- factor(Idents(MAID_obj), levels = global_clusters)
 #    Preferred for group-level comparisons (e.g., per sample, region, or 
 #    condition) when you want to reduce cell-level variability or use robust 
 #    statistical frameworks like DESeq2.
+
+###############################################################################################
+
+
 ######### 1. SINGLE-CELL LEVEL DEG USING SCTransform #########
 
-# Function to prep SCT assay for differential expression testing
+# Function to prep SCT assay for differential expression testing for merged objects
 prep_FindMarkers <- function(obj, num_slices = length(obj@assays$SCT@SCTModel.list)) {
   # Set the raw UMI assay (used during SCTransform modeling) for each slice
   for (i in 1:num_slices) {
@@ -113,12 +123,12 @@ prep_FindMarkers <- function(obj, num_slices = length(obj@assays$SCT@SCTModel.li
   return(obj)
 }
 
-# Apply the prep function to your Seurat object (using MAID_obj as example)
-MAID_obj <- prep_FindMarkers(MAID_obj, num_slices = 1)
+# Apply the prep function to your Seurat object (using Mouse_obj as example)
+Mouse_obj <- prep_FindMarkers(Mouse_obj, num_slices = 1)
 
 # Run DE across all clusters using SCT-normalized expression
 sc_markers <- FindAllMarkers(
-  object          = MAID_obj,
+  object          = Mouse_obj,
   assay           = "SCT",           # Use SCT-normalized values
   only.pos        = TRUE) #Change to FALSE for both 'upregulated' and 'downregulated' genes
 
@@ -141,53 +151,137 @@ sc_markers <- subset(sc_markers, pct.1 > 0.3 & (pct.2 < 0.3 | abs(avg_log2FC) > 
 #Visualize marker genes using using FeaturePlots, VlnPlots, DotPlots as described above. 
 
 
-DefaultAssay(MAID_obj) <- "SCT"
+# Extract the single best marker per cluster based on average log2 fold change
+top1_markers <- sc_markers %>%
+  group_by(cluster) %>%
+  slice_max(n = 1, order_by = avg_log2FC)
 
+# Create a clean character vector of these top genes to feed into plotting functions
+top_genes <- unique(top1_markers$gene)
 
+DefaultAssay(Mouse_obj) <- "SCT"
+
+# percentage of cells expressing a gene and the average expression level across clusters
+DotPlot(
+  Mouse_obj, 
+  features = top_genes, 
+  group.by = "seurat_clusters"
+) + 
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Show the expression distribution of a gene across clusters
 VlnPlot(
-  MAID_obj,
-  features = c("nFeature_Xenium", "nCount_Xenium"),
+  Mouse_obj,
+  features = top_genes[1:3], # Plucking the first 3 top markers 
   group.by = "seurat_clusters",
-  ncol = 2,
   pt.size = 0,
-  cols = MAID_obj@misc$cluster_colors
+  cols = Mouse_obj@misc$cluster_colors
 ) +
   theme_classic()
 
 VlnPlot(
-  MAID_obj,
-  features = "AQP4",
+  Mouse_obj,
+  features = "Aqp4",
   group.by = "seurat_clusters",
   pt.size = 0,
-  cols = MAID_obj@misc$cluster_colors
+  cols = Mouse_obj@misc$cluster_colors
 ) +
+  theme_classic()
+
+FeaturePlot(
+  Mouse_obj,
+  features = top_genes[1:3], 
+  ncol = 3,
+  min.cutoff = "q10",
+  max.cutoff = "q90",
+  reduction = "umap",
+)
+
+DimPlot(
+  Mouse_obj,
+  reduction = "umap",
+  label = TRUE,        # Overlays the cluster names/numbers on the plot
+  repel = TRUE,        # Prevents text labels from overlapping
+  pt.size = 0.5
+) +
+  ggtitle("Clusters") +
   theme_classic()
 
 
 FeaturePlot(
-  MAID_obj,
-  features = c("SLC17A6", "GAD1"),
-  #assay = "SCT",
-  ncol = 3,
+  Mouse_obj,
+  features = top_genes[1],
   min.cutoff = "q10",
   max.cutoff = "q90",
+  reduction = "umap",
 )
+
+
+ImageFeaturePlot(Mouse_obj, fov = "X8fov", features = c("Aqp4", "Paqr5", "Trem2"))
 
 
 
 ######### 2. PSEUDOBULK LEVEL DEG ANALYSIS ##########################################
-# Reloading MAID_obj
+# First, once again lets clear old objects
+rm(list = ls())
+gc()
+
+# let's reload mouse object and apply prepossessing steps to it
+Mouse_obj<-readRDS("Region_2_right-obj.rds")
+# Update Seurat Objects to new structure for storing data/calculations. 
+# For Seurat v3 objects, will validate object structure ensuring all keys 
+# and feature names are formed properly.
+Mouse_obj <- UpdateSeuratObject(Mouse_obj)
+
+Mouse_obj = SCTransform(Mouse_obj, assay = "Xenium")
+
+
+Mouse_obj <- RunPCA(Mouse_obj, features = VariableFeatures(Mouse_obj), npcs = 50, verbose = FALSE)
+Mouse_obj <- FindNeighbors(Mouse_obj, dims = 1:24)
+Mouse_obj <- FindClusters(Mouse_obj, resolution = 0.1)
+
+Mouse_obj <- RunUMAP(Mouse_obj, dims = 1:24)
+
+# get saved SingleR results from previous script
+singler_results <-readRDS("Output/SingleR_X8_fov_results.rds")
+Mouse_obj$CellSubtype <- singler_results$pruned.labels
+
+# Assign global color pallete
+global_clusters <- levels(Idents(Mouse_obj))
+n <- length(global_clusters)
+
+# Generate distinct color palette (Polychrome handles up to 40–50 unique colors)
+if (n <= 36) {
+  palette <- Polychrome::palette36.colors(n)
+} else {
+  # For >36 clusters, extend smoothly with hue palette
+  palette <- scales::hue_pal()(n)
+}
+
+# Create a named color vector for consistent mapping
+cluster_colors <- setNames(palette, global_clusters)
+
+# Store mapping for reproducibility
+Mouse_obj@misc$cluster_colors <- cluster_colors
+
+# Ensure Idents is a factor with consistent levels
+Idents(Mouse_obj) <- factor(Idents(Mouse_obj), levels = global_clusters)
+
+
+#### Start of Psuedobulk specific code ###
+
 
 # Aggregate raw counts by sample and cell subtype (or other metadata grouping)
-pseudo <- AggregateExpression(MAID_obj, assays = "Xenium", return.seurat = TRUE,
+pseudo <- AggregateExpression(Mouse_obj, assays = "Xenium", return.seurat = TRUE,
                               group.by      = c("orig.ident", "CellSubtype"))
 
 # Optional: check identities of resulting pseudobulk groups
 table(Idents(pseudo))  # Should show sample × cell subtype combinations
 
 # Run DE between pseudobulk groups
-pb_markers <- FindMarkers(object = pseudo, ident.1 = "CellType1",      
-                          ident.2 = "CellType2", assay = "Xenium", test.use = "DESeq2")
+pb_markers <- FindMarkers(object = pseudo, ident.1 = "Astro",      
+                          ident.2 = "Macrophage", assay = "Xenium", test.use = "DESeq2")
 
 
 ###Visualize marker genes using appropriate plots for pseudobulked data

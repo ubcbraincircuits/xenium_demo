@@ -61,6 +61,15 @@ setwd("D:/work/Github_demo/xenium_demo/Data")
 # Xenium data 
 ST <- readRDS("merged_obj.rds")
 
+# Normalize and run reductions   Not needed because normalization done in loop!!
+#ST <- SCTransform(ST, assay = "Xenium")
+
+#ST <- RunPCA(ST, features = VariableFeatures(ST), npcs = 50, verbose = FALSE)
+
+#ST <- FindNeighbors(ST, dims = 1:30)
+#ST <- FindClusters(ST, resolution = 0.5)
+#ST <- RunUMAP(ST, dims = 1:30)
+
 
 # assign scRNAseq as your reference 
 #sc.ref <- sc
@@ -155,10 +164,15 @@ for (sample_name in sample_names) {
   all_pruned[sample_cells] <- singleR_results$pruned.labels
 }
 
-# Add to metadata of the full dat object(s)
+# Add to metadata of the full dat object(s) 
 
 ST$SingleR_label_midfine <- all_labels
 ST$SingleR_pruned_midfine <- all_pruned
+
+#labeled_merged_obj <- AddMetaData(dat, metadata = all_labels, col.name = "CellSubtype_SingleR")
+
+#saveRDS(ST, file = file.path(output_dir, paste0("SingleR_ST_results.rds")))
+
 
 #visualize using methods discussed above
 #ensure to 'group.by = SingleR_pruned_midfine or SingleR_label_midfine
@@ -196,45 +210,5 @@ ggplot(ST@meta.data, aes(x = orig.ident, fill = SingleR_pruned_midfine)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 # Normalize, cluster and Dim reduction
-#ST <- FindVariableFeatures(ST, selection.method = "vst", nfeatures = 2000)
-
-# Normalize and run reductions
-ST <- SCTransform(ST, assay = "Xenium")
-
-ST <- RunPCA(ST, features = VariableFeatures(ST), npcs = 50, verbose = FALSE)
-
-ST <- FindNeighbors(ST, dims = 1:30)
-ST <- FindClusters(ST, resolution = 0.5)
-ST <- RunUMAP(ST, dims = 1:30)
-
-# Visualize the high-confidence annotations on one specific FOV
-ImageDimPlot(ST, 
-             fov = "X2fov",  # Change this to whichever FOV you want to inspect
-             group.by = "SingleR_pruned_midfine", 
-             size = 0.5, 
-             dark.background = TRUE)
-
-# Create a new column just to highlight unannotated cells
-ST$is_unannotated <- is.na(ST$SingleR_pruned_midfine)
-ImageDimPlot(ST, 
-             fov = "X2fov", 
-             group.by = "is_unannotated", 
-             cols = c("FALSE" = "grey", "TRUE" = "red"),
-             size = 0.5, 
-             dark.background = TRUE)
-
-# Project the spatial annotations onto the UMAP embeddings
-DimPlot(ST, 
-        reduction = "umap", 
-        group.by = "SingleR_pruned_midfine", 
-        label = TRUE, 
-        repel = TRUE) + 
-  ggtitle("SingleR Annotations on UMAP")
-
-# Create a proportional bar chart comparing left vs right, or region vs region
-ggplot(ST@meta.data, aes(x = orig.ident, fill = SingleR_pruned_midfine)) +
-  geom_bar(position = "fill") +
-  theme_minimal() +
-  labs(x = "Cortex Region / FOV", y = "Proportion of Cells", fill = "Cell Type") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+ST <- FindVariableFeatures(ST, selection.method = "vst", nfeatures = 2000)
 

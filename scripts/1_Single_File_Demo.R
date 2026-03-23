@@ -63,6 +63,15 @@ Mouse_obj <- UpdateSeuratObject(Mouse_obj)
 
 # Start by analyzing one sample at a time to understand the workflow and your data
 
+# We recommend running the following command, to familiarize yourself with a 
+# Seurat object
+View(Mouse_obj) 
+# note: The View function is case sensitive 
+# View() - (capital 'V') is the built-in RStudio function that opens an 
+#           interactive spreadsheet-style data viewer in a new tab.
+# view() - (lowercase 'v') is a function from the tidyverse/tibble package. It
+#           shows a static table style output in a new tab.
+
 # ------------------------------------------------------------------
 # Single-Sample Analysis Workflow (QC, SCTransform, PCA, UMAP, Clustering)
 # ------------------------------------------------------------------
@@ -139,7 +148,7 @@ ggplot(Mouse_obj@meta.data, aes(x = nCount_Xenium)) +
 VlnPlot(Mouse_obj, features = c("nFeature_Xenium", "nCount_Xenium"), ncol = 2, pt.size =0)
 
 
-
+# include comments on recycling to this part
 
 # Filter cells based on QC thresholds
 #Mouse_obj <- subset(Mouse_obj, subset = nFeature_Xenium > 2 & nCount_Xenium > 0) 
@@ -165,6 +174,10 @@ Mouse_obj <- SCTransform(Mouse_obj, assay = "Xenium")
 # Link to documentation on SCTransform: https://satijalab.org/seurat/articles/sctransform_vignette.html
 # Link to paper on SCTransform: https://link.springer.com/article/10.1186/s13059-021-02584-9
 
+
+# For the 2 below function definitions, It is recommended to click the small downwards
+# arrow to the left on line (tentative) 190 and 224, to remove the clutter.
+# you can expand the function definition if you want insight into how these work.
 
 # function to plot residual variance vs gene expression:  to visualize variance stabilization
 # - gene_var:   The data frame containing gene attributes. 
@@ -208,10 +221,33 @@ residualVarPlot <- function(gene_var, xaxis = "gmean", max_resvar = 100, ntop = 
   return(p)
 }
 
+# Extracts and combines SCT attributes for merged objects
+get_gene_attributes <- function(obj, assay = "SCT") {
+  # Get the results (returns a list for merged objects)
+  res <- SCTResults(obj, slot = "feature.attributes", assay = assay)
+  
+  # If it's already a single data frame, return it
+  if (is.data.frame(res)) {
+    res$gene <- rownames(res)
+    res$model <- "Model_1"
+    return(res)
+  }
+  
+  # If it's a list, bind all data frames together
+  combined_df <- do.call(rbind, lapply(names(res), function(model_name) {
+    df <- res[[model_name]]
+    df$gene <- rownames(df)
+    df$model <- model_name # Keep track of which FOV/Sample the data comes from
+    return(df)
+  }))
+  
+  return(combined_df)
+}
+
 # test normalization by plotting "residual variance" vs "gene expression" 
 # SCTResults is a way to pull data from SCTAssay object:
 # documentation: https://satijalab.org/seurat/reference/sctresults#:~:text=Arguments,just%20returns%20the%20slot%20directly).
-gene_attr_mouse <- SCTResults(Mouse_obj, slot = "feature.attributes", assay = "SCT")
+gene_attr_mouse <- get_gene_attributes(Mouse_obj, assay = "SCT")
 
 residualVarPlot(gene_attr_mouse, max_resvar = 10, pt_size = 3, annotate = T)
 
@@ -238,6 +274,29 @@ Mouse_obj <- RunPCA(Mouse_obj, features = VariableFeatures(Mouse_obj), npcs = 50
 # variance is a quantity that makes most sense for continuous and non-sparse data.
 # if you dont see a clear elbow, you data might be unsuitable for an elbow plot examination
 ElbowPlot(Mouse_obj, ndims = 50)
+
+# Alternatively, we can also Visualize this as Percentage Variance Explained, 
+# instead of change in Standard deviation this way:
+
+# Extract standard deviations and calculate variance (stdev^2)
+pca_var <- Mouse_obj[["pca"]]@stdev^2
+
+# Calculate total variance from the scaled data layer
+total_var <- sum(rowVars(LayerData(Mouse_obj, assay = "SCT", layer = "scale.data")))
+
+# Create a dataframe for the first 50 PCs
+plot_data <- data.frame(PC = 1:50, Pct_Variance = (pca_var[1:50] / total_var) * 100)
+
+# Generate the Elbow Plot for Variance Explained
+ggplot(plot_data, aes(x = PC, y = Pct_Variance)) +
+  geom_point(size = 2) +
+  labs(
+    title = "Elbow Plot: Variance Explained",
+    x = "Principal Component", 
+    y = "% Variance explained"
+  ) +
+  theme_classic()
+
 
 # Option 2: PCA Heatmap
 # - Use DimHeatmap() to visualize the top features (genes) driving each PC.
@@ -308,7 +367,7 @@ dim_reso_test(
   # "Z:/Wellington Lab/Mehwish/Xenium_human_run1/B_HumanXenium_Run1_OG_rds"
   output_dir = "D:/work/Github_demo/xenium_demo/Data/Output", # where to save PDFs
   red = "pca",             # dimensionality reduction to use
-  group_vars = c(), #c("orig.ident", "Orientation")  # metadata for coloring
+  group_vars = c("orig.ident"), #c("orig.ident", "Orientation")  # metadata for coloring
 )
 
 
@@ -351,6 +410,8 @@ ImageDimPlot(Mouse_obj, molecules = "Slc17a7", nmols = 10000, alpha = 0.3, mols.
 
 # For an intuitive explanation of UMAP, see this StatQuest video: https://www.youtube.com/watch?v=eN0wFzBA4Sc
 # paper on UMAP: https://arxiv.org/abs/1802.03426
+
+# Here is a very useful playground with visualizations: https://pair-code.github.io/understanding-umap/
 
 Mouse_obj <- RunUMAP(Mouse_obj, dims = 1:24)
 
@@ -409,12 +470,15 @@ DimPlot(Mouse_obj, #group.by = "seurat_clusters",
 
 # FeaturePlot: gene expression in UMAP space 
 FeaturePlot(Mouse_obj, features = c("Aqp4"), label = TRUE,)
+FeaturePlot(Mouse_obj, features = c("nCount_Xenium"), label = TRUE,)
+
 
 # Gene expression in spatial coordinates
 ImageFeaturePlot(Mouse_obj, fov = "X8fov", features = c("Aqp4", "Paqr5", "Trem2"))
 
 #for single gene
 ImageFeaturePlot(Mouse_obj, fov = "X8fov", features = ("Aqp4"))
+ImageFeaturePlot(Mouse_obj, fov = "X8fov", features = ("nCount_Xenium"))
 
 # Violin Plot of raw counts (optional: set log = TRUE for log scale)
 VlnPlot(Mouse_obj, features = c("Slc17a7", "Gfap"), pt.size = 0, log = TRUE,)
