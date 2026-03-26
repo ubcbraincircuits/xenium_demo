@@ -367,7 +367,7 @@ dim_reso_test(
   # "Z:/Wellington Lab/Mehwish/Xenium_human_run1/B_HumanXenium_Run1_OG_rds"
   output_dir = "D:/work/Github_demo/xenium_demo/Data/Output", # where to save PDFs
   red = "pca",             # dimensionality reduction to use
-  group_vars = c("orig.ident"), #c("orig.ident", "Orientation")  # metadata for coloring
+  group_vars = c("orig.ident", "Orientation")  # metadata for coloring
 )
 
 
@@ -470,7 +470,10 @@ DimPlot(Mouse_obj, #group.by = "seurat_clusters",
 
 # FeaturePlot: gene expression in UMAP space 
 FeaturePlot(Mouse_obj, features = c("Aqp4"), label = TRUE,)
+  
 FeaturePlot(Mouse_obj, features = c("nCount_Xenium"), label = TRUE,)
+
+VlnPlot(Mouse_obj, features = c("nFeature_Xenium", "nCount_Xenium"), ncol = 2, pt.size =0, log = TRUE)
 
 
 # Gene expression in spatial coordinates
@@ -478,7 +481,13 @@ ImageFeaturePlot(Mouse_obj, fov = "X8fov", features = c("Aqp4", "Paqr5", "Trem2"
 
 #for single gene
 ImageFeaturePlot(Mouse_obj, fov = "X8fov", features = ("Aqp4"))
+
 ImageFeaturePlot(Mouse_obj, fov = "X8fov", features = ("nCount_Xenium"))
+
+p <- ImageFeaturePlot(Mouse_obj, fov = "X8fov", features = "nCount_Xenium")
+
+# Overwrite the default scale with a log10 transformation
+p + scale_fill_gradient(low = "lightgrey", high = "firebrick", trans = "log10")
 
 # Violin Plot of raw counts (optional: set log = TRUE for log scale)
 VlnPlot(Mouse_obj, features = c("Slc17a7", "Gfap"), pt.size = 0, log = TRUE,)
@@ -493,7 +502,8 @@ DotPlot(object = Mouse_obj, features = c("Aqp4", "Gfap", "Sla", "Paqr5", "Trem2"
 
 
 
-
+#TODOO: Add note about circular revision of filters and UMAP dims/neighbors based on the graphs you see above
+# Eg: if a cluster is all just low-expression cells, its not very useful
 
 # ------------------------------------------------------------------
 # Subsetting Data Based on Clusters of Interest

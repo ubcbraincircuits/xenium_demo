@@ -6,12 +6,19 @@
 # Overview of how it works:
 # 1) Load a scRNA-seq reference (sc.ref) and one Xenium Seurat object (dat).
 # 2) Normalize the scRNA-seq reference and (optionally) pseudobulk it by a
-#    label (here: "majorcelltype") to create a robust, denoised reference matrix.
+#    label (here: "subclass") to create a robust, denoised reference matrix.
 # 3) For each sample in the Xenium object (dat$orig.ident), normalize the Xenium
 #    assay, intersect genes with the reference, and run SingleR to predict labels.
 # 4) Save per-sample SingleR results and write the predicted labels back to the
 #    full objects’ metadata (both raw and "pruned" labels for stricter calls).
 # by larissa June, 2025
+
+
+# We choose to use SingleR over other cell type annotation methods as it is fast
+# and accurate in comparison to alternatives as laid out in this paper:
+# https://link.springer.com/article/10.1186/s12859-025-06044-0
+
+
 ## Data Import & Organization
 library(here)             
 library(data.table)
