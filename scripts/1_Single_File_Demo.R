@@ -51,6 +51,8 @@ options(future.globals.maxSize = 250000 * 1024^2)
 # Example: Setting Working Directory and Reading an RDS File
 # ------------------------------------------------------------------
 # Set the working directory to the folder containing your saved RDS objects
+# should be set to your downloads folder, eg: 
+# setwd("C:/User/User/Downloads/Data")
 setwd("D:/work/Github_demo/xenium_demo/Data")
 
 # Load in the RDS object
@@ -502,8 +504,13 @@ DotPlot(object = Mouse_obj, features = c("Aqp4", "Gfap", "Sla", "Paqr5", "Trem2"
 
 
 
-#TODOO: Add note about circular revision of filters and UMAP dims/neighbors based on the graphs you see above
-# Eg: if a cluster is all just low-expression cells, its not very useful
+# Note: The above QC and Visualization is not just a linear pipeline, but should be
+# treated as circular revision of filters and UMAP dims/neighbors based on the graphs 
+# you see above.
+# Eg: if a cluster is all just low-expression cells, its not very useful, so 
+# you might want to increase nCount filter.
+# Or maybe SCTransform doesn'nt function well with your dataset, so you use 
+# log normalization etc. There could be many such scenarios to be mindful of.
 
 # ------------------------------------------------------------------
 # Subsetting Data Based on Clusters of Interest

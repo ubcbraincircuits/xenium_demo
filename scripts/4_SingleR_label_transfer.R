@@ -178,7 +178,7 @@ ST$SingleR_pruned_midfine <- all_pruned
 
 #labeled_merged_obj <- AddMetaData(dat, metadata = all_labels, col.name = "CellSubtype_SingleR")
 
-#saveRDS(ST, file = file.path(output_dir, paste0("SingleR_ST_results.rds")))
+saveRDS(ST, file = file.path(output_dir, paste0("SingleR_ST_results.rds")))
 
 
 #visualize using methods discussed above

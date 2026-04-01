@@ -228,7 +228,8 @@ rm(list = ls())
 gc()
 
 # let's reload mouse object and apply prepossessing steps to it
-Mouse_obj<-readRDS("Region_2_right-obj.rds")
+#Mouse_obj<-readRDS("Region_2_right-obj.rds")
+Mouse_obj<-readRDS("merged_raw_metadata_obj.rds")
 # Update Seurat Objects to new structure for storing data/calculations. 
 # For Seurat v3 objects, will validate object structure ensuring all keys 
 # and feature names are formed properly.
@@ -244,8 +245,9 @@ Mouse_obj <- FindClusters(Mouse_obj, resolution = 0.1)
 Mouse_obj <- RunUMAP(Mouse_obj, dims = 1:24)
 
 # get saved SingleR results from previous script
-singler_results <-readRDS("Output/SingleR_X8_fov_results.rds")
-Mouse_obj$CellSubtype <- singler_results$pruned.labels
+singler_results <-readRDS("Output/SingleR_ST_results.rds")
+Mouse_obj$CellSubtype <- singler_results$SingleR_pruned_midfine
+#Mouse_obj$CellSubtype <- singler_results$pruned.labels
 
 # Assign global color pallete
 global_clusters <- levels(Idents(Mouse_obj))
@@ -281,7 +283,7 @@ table(Idents(pseudo))  # Should show sample × cell subtype combinations
 
 # Run DE between pseudobulk groups
 pb_markers <- FindMarkers(object = pseudo, ident.1 = "Astro",      
-                          ident.2 = "Macrophage", assay = "Xenium", test.use = "DESeq2")
+                          ident.2 = "Macrophage", assay = "Xenium", test.use = "MAST") #test.use = "DESeq2")
 
 
 ###Visualize marker genes using appropriate plots for pseudobulked data
