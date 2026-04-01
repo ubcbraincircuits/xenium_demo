@@ -112,7 +112,13 @@ Idents(Mouse_obj) <- factor(Idents(Mouse_obj), levels = global_clusters)
 
 ######### 1. SINGLE-CELL LEVEL DEG USING SCTransform #########
 
-# Function to prep SCT assay for differential expression testing for merged objects
+# For merged objects with multiple SCT models, Seurat recommends running
+# PrepSCTFindMarkers() before DE on the SCT assay.
+# Documentation:
+# https://satijalab.org/seurat/reference/prepsctfindmarkers
+#
+# This function standardizes the SCT representation so marker testing is more
+# comparable across merged pieces / slices. 
 prep_FindMarkers <- function(obj, num_slices = length(obj@assays$SCT@SCTModel.list)) {
   # Set the raw UMI assay (used during SCTransform modeling) for each slice
   for (i in 1:num_slices) {
@@ -124,13 +130,17 @@ prep_FindMarkers <- function(obj, num_slices = length(obj@assays$SCT@SCTModel.li
 }
 
 # Apply the prep function to your Seurat object (using Mouse_obj as example)
+# For this single-object example, num_slices = 1 is sufficient.
 Mouse_obj <- prep_FindMarkers(Mouse_obj, num_slices = 1)
 
 # Run DE across all clusters using SCT-normalized expression
+# FindAllMarkers identifies marker genes for each identity class (cluster)
+# relative to all other cells.
+# Documentation: https://satijalab.org/seurat/reference/findallmarkers
 sc_markers <- FindAllMarkers(
   object          = Mouse_obj,
-  assay           = "SCT",           # Use SCT-normalized values
-  only.pos        = TRUE) #Change to FALSE for both 'upregulated' and 'downregulated' genes
+  assay           = "SCT",# Use SCT-normalized values
+  only.pos        = TRUE) # Change to FALSE for both 'upregulated' and 'downregulated' genes
 
 
 # After identifying (DEGs) with FindAllMarkers(),
@@ -152,6 +162,7 @@ sc_markers <- subset(sc_markers, pct.1 > 0.3 & (pct.2 < 0.3 | abs(avg_log2FC) > 
 
 
 # Extract the single best marker per cluster based on average log2 fold change
+# to quickly visualize and verify
 top1_markers <- sc_markers %>%
   group_by(cluster) %>%
   slice_max(n = 1, order_by = avg_log2FC)
@@ -276,17 +287,21 @@ Idents(Mouse_obj) <- factor(Idents(Mouse_obj), levels = global_clusters)
 
 # Aggregate raw counts by sample and cell subtype (or other metadata grouping)
 pseudo <- AggregateExpression(Mouse_obj, assays = "Xenium", return.seurat = TRUE,
-                              group.by      = c("orig.ident", "CellSubtype"))
+                              group.by      = c("orig.ident")) #, "CellSubtype"))
+
+# Extract the cell type from the pseudobulk column names 
+# (Assuming the format is orig.ident_CellSubtype, so we grab the second part)
+#pseudo$CellType <- sapply(strsplit(colnames(pseudo), "_"), `[`, 2)
 
 # Optional: check identities of resulting pseudobulk groups
 table(Idents(pseudo))  # Should show sample × cell subtype combinations
 
 # Run DE between pseudobulk groups
-pb_markers <- FindMarkers(object = pseudo, ident.1 = "Astro",      
-                          ident.2 = "Macrophage", assay = "Xenium", test.use = "MAST") #test.use = "DESeq2")
+pb_markers <- FindMarkers(object = pseudo, ident.1 = "X2-fov_Astro",      
+                          ident.2 = "X2-fov_Macrophage", assay = "Xenium", test.use = "wilcox_limma") #test.use = "DESeq2")
 
 
-###Visualize marker genes using appropriate plots for pseudobulked data
+ ###Visualize marker genes using appropriate plots for pseudobulked data
 
 ##Boxplots 
 # Boxplots are preferred for pseudobulked data since each point 

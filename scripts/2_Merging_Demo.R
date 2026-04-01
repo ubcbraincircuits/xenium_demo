@@ -83,8 +83,10 @@ Images(merged_obj) # or use names(Mouse_obj@images)
 # Contrast it to the merged object:
 View(merged_obj)
 
-# Save merged raw obj as rds to re-use later down the line.
+# Save merged raw obj as rds to re-use later down the line
 # Whenever we want to refresh or do new analysis.
+
+# It is saved in the working directory
 saveRDS(merged_obj, "merged_raw_obj.rds")
 
 # We can also clear old objects

@@ -69,6 +69,7 @@ Mouse_obj <- UpdateSeuratObject(Mouse_obj)
 gc()
 
 # Set the output directory for saving SingleR result RDS files
+# change below to something reselmbling: C:/User/User/Downloads/Data/Output
 output_dir <- 'D:/work/Github_demo/xenium_demo/Data/Output'
 if (!dir.exists(output_dir)) {
   dir.create(output_dir, recursive = TRUE)
@@ -179,3 +180,122 @@ ggplot(Mouse_obj@meta.data, aes(x = orig.ident, fill = SingleR_pruned_midfine)) 
 
 # Normalize, cluster and Dim reduction ...
 Mouse_obj <- FindVariableFeatures(Mouse_obj, selection.method = "vst", nfeatures = 2000)
+
+# Now that we have seen how SingleR label transfer works on a single fov
+# Lets apply this to the merged Object
+
+# First, lets clear objects from memory
+
+rm(list = ls())
+gc()
+
+# Xenium data 
+ST <- readRDS("merged_obj.rds")
+
+# make dat your xenium obj 
+dat <- ST #cortical_ST
+
+# single cell data (reference)
+sc.ref <- readRDS("allen_cortex.rds") 
+
+
+output_dir <- 'D:/work/Github_demo/xenium_demo/Data/Output'
+
+# Matrix of genes x cell types (normalized counts for SingleR "ref")
+ref_expr <- pseudobulk$RNA
+
+# Identify samples in the Xenium dataset; loop runs per sample for reproducibility
+sample_names <- unique(dat$orig.ident)
+
+# Pre-allocate holders for all-cell predictions (labels and pruned.labels)
+all_labels <- rep(NA, ncol(dat))
+all_pruned <- rep(NA, ncol(dat))
+names(all_labels) <- colnames(dat)
+names(all_pruned) <- colnames(dat)
+
+# run loop to execute SingleR on each sample in dat
+for (sample_name in sample_names) {
+  message(paste0("Running SingleR for sample: ", sample_name))
+  
+  # Subset Seurat object for current sample
+  sample_obj <- subset(dat, subset = orig.ident == sample_name)
+  
+  # Normalize Xenium assay (ensure query is on log-normalized scale)
+  sample_obj <- NormalizeData(sample_obj, assay = "Xenium", verbose = FALSE)
+  
+  # Extract log-normalized expression for the query (Xenium)
+  query_expr <- GetAssayData(sample_obj, layer = "data", assay = "Xenium") # slot = "data"
+  
+  # Intersect genes between reference and query to match features
+  # (Double subset avoids control probes like blank_codewords)
+  common_genes <- intersect(rownames(ref_expr), rownames(query_expr))
+  ref_sub <- ref_expr[common_genes, , drop = FALSE]
+  query_sub <- query_expr[common_genes, , drop = FALSE]
+  
+  # Run SingleR using pseudobulked reference
+  singleR_results <- SingleR(
+    test = as.matrix(query_sub),
+    ref = as.matrix(ref_sub),
+    labels = colnames(ref_expr)
+  )
+  
+  # Save per-sample SingleR results for audit/reuse
+  saveRDS(singleR_results, file = file.path(output_dir, paste0("SingleR_", sample_name, "_results.rds")))
+  
+  # Map predictions back to the full 'dat' metadata using barcodes
+  # pruned.labels = higher-confidence subset of calls
+  sample_cells <- colnames(sample_obj)
+  all_labels[sample_cells] <- singleR_results$labels
+  all_pruned[sample_cells] <- singleR_results$pruned.labels
+}
+
+# Add to metadata of the full dat object(s) 
+
+ST$SingleR_label_midfine <- all_labels
+ST$SingleR_pruned_midfine <- all_pruned
+
+#labeled_merged_obj <- AddMetaData(dat, metadata = all_labels, col.name = "CellSubtype_SingleR")
+
+saveRDS(ST, file = file.path(output_dir, paste0("SingleR_ST_results.rds")))
+
+
+#visualize using methods discussed above
+#ensure to 'group.by = SingleR_pruned_midfine or SingleR_label_midfine
+
+# Run garbage collection to free up temporary RAM overhead
+gc()
+
+## Note adjust fov to whatever you want to visualize!!
+# find fov's using:
+
+Images(ST) # or use names(obj@images)
+
+
+# Visualize the high-confidence annotations on one specific FOV
+ImageDimPlot(ST, 
+             fov = "X2fov",  # Change this to whichever FOV you want to inspect
+             group.by = "SingleR_pruned_midfine", 
+             size = 0.5, 
+             dark.background = TRUE)
+
+# Create a new column just to highlight unannotated cells
+ST$is_unannotated <- is.na(ST$SingleR_pruned_midfine)
+ImageDimPlot(ST, 
+             fov = "X2fov", 
+             group.by = "is_unannotated", 
+             cols = c("FALSE" = "grey", "TRUE" = "red"),
+             size = 0.5, 
+             dark.background = TRUE)
+
+# Create a proportional bar chart comparing left vs right, or region vs region
+ggplot(ST@meta.data, aes(x = orig.ident, fill = SingleR_pruned_midfine)) +
+  geom_bar(position = "fill") +
+  theme_minimal() +
+  labs(x = "Cortex Region / FOV", y = "Proportion of Cells", fill = "Cell Type") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Normalize, cluster and Dim reduction
+ST <- FindVariableFeatures(ST, selection.method = "vst", nfeatures = 2000)
+
+
+
