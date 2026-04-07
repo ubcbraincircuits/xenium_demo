@@ -362,14 +362,18 @@ dim_reso_test <- function(dataset, dims_list, resolutions, output_dir, red, grou
 
 
 # Run the automated test at desired dimension and resolution settings and examine results
+# This is optional, and meant to be a "set it and forget it" test to be exhaustive
+# and run overnight/over a weekend to help you choose a good resolution and
+# number of dimensions. You can skip this and see the results on the resources page
+# on Github
 dim_reso_test(
   dataset = Mouse_obj,
-  dims_list = list(1:20, 1:30, 1:40),  # test PC ranges
-  resolutions = c(0.1, 0.4),    # test resolutions
+  dims_list = list(1:20, 1:30, 1:40, 1:50),  # test PC ranges
+  resolutions = c(0.1, 0.3, 0.5, 0.7),    # test resolutions
   # "Z:/Wellington Lab/Mehwish/Xenium_human_run1/B_HumanXenium_Run1_OG_rds"
   output_dir = "D:/work/Github_demo/xenium_demo/Data/Output", # where to save PDFs
   red = "pca",             # dimensionality reduction to use
-  group_vars = c("orig.ident", "Orientation")  # metadata for coloring
+  group_vars = c("orig.ident")# , "Orientation")  # metadata for coloring
 )
 
 
@@ -389,9 +393,13 @@ Mouse_obj <- FindNeighbors(Mouse_obj, dims = 1:24)
 Mouse_obj <- FindClusters(Mouse_obj, resolution = 0.1)
 
 
+DefaultAssay(Mouse_obj) <- "Xenium"
+
 ImageDimPlot(Mouse_obj, fov = "X8fov", cols = Mouse_obj@misc$cluster_colors, size = 0.5, border.size = NA,
 axes = TRUE, dark.background = TRUE) + DarkTheme()
-ImageDimPlot(Mouse_obj, molecules = "Slc17a7", nmols = 10000, alpha = 0.3, mols.cols = "red")
+ImageDimPlot(Mouse_obj, fov = "X8fov", molecules = "Slc17a7", nmols = 10000, alpha = 0.3, mols.cols = "red")
+
+
 
 # 5. Non-linear Embedding: UMAP
 # UMAP parameters:
@@ -555,3 +563,4 @@ ImageDimPlot(Mouse_obj, fov = "X8fov", cols = Mouse_obj@misc$cluster_colors, siz
 ##Once you have your subset using  any one of the options above, you can perform steps 1-7 as above
 # Before re-running SCTransform on the refined subset, switch default assay
 DefaultAssay(obj_sub) <- "Xenium"
+
