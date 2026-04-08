@@ -255,10 +255,29 @@ Mouse_obj <- FindClusters(Mouse_obj, resolution = 0.1)
 
 Mouse_obj <- RunUMAP(Mouse_obj, dims = 1:24)
 
-# get saved SingleR results from previous script
-singler_results <-readRDS("Output/SingleR_ST_results.rds")
+
+# Add SingleR labels
+singler_results <- readRDS("Output/SingleR_ST_results.rds")
 Mouse_obj$CellSubtype <- singler_results$SingleR_pruned_midfine
-#Mouse_obj$CellSubtype <- singler_results$pruned.labels
+
+Mouse_obj$condition <- NA
+
+Mouse_obj$condition[Mouse_obj$orig.ident %in% c("X2_fov", "X3_fov")] <- "A"
+Mouse_obj$condition[Mouse_obj$orig.ident %in% c("X4_fov", "X5_fov")] <- "B"
+
+# Keep only cells with assigned condition and non-missing cell subtype
+Mouse_obj <- subset(
+  Mouse_obj,
+  subset = !is.na(condition) & !is.na(CellSubtype)
+)
+
+# Check metadata
+table(Mouse_obj$orig.ident, Mouse_obj$condition)
+table(Mouse_obj$CellSubtype, Mouse_obj$condition)
+
+# Add SingleR labels
+singler_results <- readRDS("Output/SingleR_ST_results.rds")
+Mouse_obj$CellSubtype <- singler_results$SingleR_pruned_midfine
 
 # Assign global color pallete
 global_clusters <- levels(Idents(Mouse_obj))
@@ -286,19 +305,45 @@ Idents(Mouse_obj) <- factor(Idents(Mouse_obj), levels = global_clusters)
 
 
 # Aggregate raw counts by sample and cell subtype (or other metadata grouping)
-pseudo <- AggregateExpression(Mouse_obj, assays = "Xenium", return.seurat = TRUE,
-                              group.by      = c("orig.ident")) #, "CellSubtype"))
+pseudo <- AggregateExpression(
+  Mouse_obj,
+  assays = "Xenium",
+  return.seurat = TRUE,
+  group.by = c("condition", "orig.ident", "CellSubtype")
+)
 
-# Extract the cell type from the pseudobulk column names 
-# (Assuming the format is orig.ident_CellSubtype, so we grab the second part)
-#pseudo$CellType <- sapply(strsplit(colnames(pseudo), "_"), `[`, 2)
+# Create identity for same-celltype comparison across conditions
+pseudo$celltype.condition <- paste(pseudo$CellSubtype, pseudo$condition, sep = "_")
+Idents(pseudo) <- "celltype.condition"
 
-# Optional: check identities of resulting pseudobulk groups
-table(Idents(pseudo))  # Should show sample × cell subtype combinations
+# Inspect available groups
+table(Idents(pseudo))
+head(pseudo@meta.data)
+
+# Note, generally DESeq2 and FindMarkers needs a minimum of 3 samples per group
+# Below is just a demonstration of how to do pseudobulk DEG in xenium data, but
+# it is highly recommended to have more samples for actual analysis
 
 # Run DE between pseudobulk groups
-pb_markers <- FindMarkers(object = pseudo, ident.1 = "X2-fov_Astro",      
-                          ident.2 = "X2-fov_Macrophage", assay = "Xenium", test.use = "wilcox_limma") #test.use = "DESeq2")
+pb_markers_astro <- FindMarkers(
+  object = pseudo,
+  ident.1 = "Astro_A",
+  ident.2 = "Astro_B",
+  assay = "Xenium",
+  test.use = "DESeq2",
+  min.cells.group = 2
+)
+
+head(pb_markers_astro)
+
+pb_markers_l4 <- FindMarkers(
+  object = pseudo,
+  ident.1 = "L4_A",
+  ident.2 = "L4_B",
+  assay = "Xenium",
+  test.use = "DESeq2",
+  min.cells.group = 2
+)
 
 
  ###Visualize marker genes using appropriate plots for pseudobulked data
@@ -308,20 +353,128 @@ pb_markers <- FindMarkers(object = pseudo, ident.1 = "X2-fov_Astro",
 # represents an aggregated group (e.g., sample),
 # and violin plots can misrepresent distribution when cell-level resolution is lost.
 
+Idents(pseudo) <- "celltype.condition"
+DefaultAssay(pseudo) <- "Xenium"
+
+plot_pb_box <- function(pseudo, gene, celltype = "Astro", group1 = "A", group2 = "B") {
+  ids <- c(paste(celltype, group1, sep = "_"),
+           paste(celltype, group2, sep = "_"))
+  
+  df <- FetchData(
+    object = pseudo,
+    vars = c("celltype.condition", "condition", "CellSubtype", gene)
+  )
+  
+  colnames(df)[ncol(df)] <- "expr"
+  df <- df %>% filter(celltype.condition %in% ids)
+  
+  ggplot(df, aes(x = celltype.condition, y = expr, color = condition)) +
+    geom_boxplot(outlier.shape = NA, width = 0.45, linewidth = 0.35) +
+    geom_point(size = 2.8, position = position_jitter(width = 0.08, height = 0)) +
+    theme_classic() +
+    labs(
+      title = paste0(gene, " pseudobulk expression in ", celltype),
+      x = NULL,
+      y = "Aggregated expression"
+    ) +
+    scale_color_manual(values = c("A" = "#E64B35", "B" = "#4DBBD5"))
+}
+
+# Example
+p_box_aqp4 <- plot_pb_box(pseudo, gene = "Aqp4", celltype = "Astro")
+p_box_aqp4
+
+genes_to_plot <- c("Aqp4", "Paqr5", "Trem2")
+
+boxplots <- lapply(genes_to_plot, function(g) {
+  plot_pb_box(pseudo, gene = g, celltype = "L4")
+})
+
+boxplots[[1]]
+boxplots[[2]]
+boxplots[[3]]
+
+
+
 Idents(pseudo) <- "Celltype" #Switch to correct ident
 
-VlnPlot(object   = pseudo, features = "Gene", assay = "Xenium",
-        idents   = c("CellType1", "CellType2"), pt.size  = 0,
-        adjust   = 0) + 
+
+# note that there are'nt enough samples to make a representative plot here
+VlnPlot(
+  object = pseudo,
+  features = "Aqp4",
+  assay = "Xenium",
+  idents = c("Astro_A", "Astro_B"),
+  pt.size = 1,
+  adjust = 0
+) +
   geom_boxplot(
-    outlier.size   = 0,
-    outlier.stroke = 0,
-    lwd = 0.3)
-
-
-# Volcano plot showing differential expression between two pseudobulked groups.
-VolcanoPlot(pseudo, 
-            ident.1 = "CellType1",
-            ident.2 = "CellType2", 
-            y.threshold = 1, x.threshold = 1, log.base = "2") + #adjust thresholds as needed
+    width = 0.15,
+    outlier.shape = NA,
+    linewidth = 0.3,
+    fill = NA
+  ) +
   theme_classic()
+
+
+plot_pb_volcano <- function(markers_df,
+                            title = "Pseudobulk DE",
+                            x_thresh = 1,
+                            p_thresh = 0.05,
+                            label_top = 10,
+                            up_label = "Up in A",
+                            down_label = "Up in B") {
+  
+  df <- markers_df %>%
+    rownames_to_column("gene") %>%
+    mutate(
+      p_val_adj = ifelse(is.na(p_val_adj), 1, p_val_adj),
+      p_plot = pmax(p_val_adj, 1e-300),
+      status = case_when(
+        p_val_adj < p_thresh & avg_log2FC >= x_thresh  ~ up_label,
+        p_val_adj < p_thresh & avg_log2FC <= -x_thresh ~ down_label,
+        TRUE ~ "NS"
+      )
+    )
+  
+  lab_df <- df %>%
+    filter(status != "NS") %>%
+    arrange(p_val_adj) %>%
+    slice_head(n = label_top)
+  
+  ggplot(df, aes(x = avg_log2FC, y = -log10(p_plot), color = status)) +
+    geom_point(alpha = 0.8, size = 1.8) +
+    geom_vline(xintercept = c(-x_thresh, x_thresh), linetype = "dashed", linewidth = 0.3) +
+    geom_hline(yintercept = -log10(p_thresh), linetype = "dashed", linewidth = 0.3) +
+    ggrepel::geom_text_repel(
+      data = lab_df,
+      aes(label = gene),
+      size = 3,
+      max.overlaps = 20
+    ) +
+    scale_color_manual(values = c(
+      "NS" = "grey70",
+      up_label = "#E64B35",
+      down_label = "#4DBBD5"
+    )) +
+    theme_classic() +
+    labs(
+      title = title,
+      x = "avg_log2FC",
+      y = "-log10(adjusted p-value)",
+      color = NULL
+    )
+}
+
+# Example with your DE result
+p_volcano_astro <- plot_pb_volcano(
+  pb_markers_astro,
+  title = "Astro pseudobulk: A vs B",
+  x_thresh = 1,
+  p_thresh = 0.05,
+  label_top = 12,
+  up_label = "Higher in A",
+  down_label = "Higher in B"
+)
+
+p_volcano_astro

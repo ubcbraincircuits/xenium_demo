@@ -368,7 +368,7 @@ gc()
 
 # And using original merged object from the previous section 
 # ensure the merged obj did not go through any manipulation
-merged_obj <- readRDS("merged_raw_obj.rds")
+merged_obj <- readRDS("merged_raw_metadata_obj.rds")
 
 #Normalize using SCTransform 
 int_obj<- SCTransform(merged_obj,assay = "Xenium", verbose = FALSE)
