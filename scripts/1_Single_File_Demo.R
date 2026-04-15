@@ -66,7 +66,7 @@ Mouse_obj <- UpdateSeuratObject(Mouse_obj)
 # Start by analyzing one sample at a time to understand the workflow and your data
 
 # We recommend running the following command, to familiarize yourself with a 
-# Seurat object
+# .rds Seurat object
 View(Mouse_obj) 
 # note: The View function is case sensitive 
 # View() - (capital 'V') is the built-in RStudio function that opens an 
@@ -74,9 +74,18 @@ View(Mouse_obj)
 # view() - (lowercase 'v') is a function from the tidyverse/tibble package. It
 #           shows a static table style output in a new tab.
 
-# You can look under Assays. It shows the different assays in the object
-# with the number of [columns x rows]
-
+# What to look for in the viewer:
+# - Assays: lists the assays stored in the object (for example, raw Xenium counts
+#   and normalized SCT data). Assay dimensions are typically shown as
+#   features/genes x cells.
+# - Meta.data: contains per-cell annotations such as sample identity, QC metrics,
+#   experimental group, or user-added metadata columns.
+# - Reductions: stores dimensionality reductions such as PCA or UMAP once they
+#   have been computed.
+# - Images: contains the spatial image/FOV objects associated with this dataset,
+#   including coordinate information used for spatial plotting.
+# - Misc: may contain additional run-level or user-defined information saved
+#   during preprocessing.
 
 # ------------------------------------------------------------------
 # Single-Sample Analysis Workflow (QC, SCTransform, PCA, UMAP, Clustering)
@@ -119,9 +128,8 @@ Images(Mouse_obj) # or use names(Mouse_obj@images)
 # - nFeature_Xenium: number of unique transcript features detected per cell (i.e., how many genes/transcripts)
 # - nCount_Xenium: total transcript count per cell (sum of all detected transcript counts)
 
-# quality control - feature means total genes picked which can be less than 
-# the total panel genes 266 predesigned (human v1) + 100 custom (Kraus) 
-# as some genes might not be expressed in our sample. 
+# quality control - 
+# feature means total genes picked.
 # Count refer to number of transcripts for all the genes.
 
 ## Note that the data available has already been filtered for nFeature_Xenium > 0 & nCount_Xenium > 0
@@ -153,8 +161,6 @@ ggplot(Mouse_obj@meta.data, aes(x = nCount_Xenium)) +
 
 VlnPlot(Mouse_obj, features = c("nFeature_Xenium", "nCount_Xenium"), ncol = 2, pt.size =0)
 
-
-# include comments on recycling to this part
 
 # Filter cells based on QC thresholds
 #Mouse_obj <- subset(Mouse_obj, subset = nFeature_Xenium > 2 & nCount_Xenium > 0) 
@@ -370,6 +376,7 @@ dim_reso_test <- function(dataset, dims_list, resolutions, output_dir, red, grou
 # and run overnight/over a weekend to help you choose a good resolution and
 # number of dimensions. You can skip this and see the results on the resources page
 # on Github
+# choose a directory that suits you, eg C:/User/User/Downloads/Xenium_demo/Data/Output
 dim_reso_test(
   dataset = Mouse_obj,
   dims_list = list(1:20, 1:30, 1:40, 1:50),  # test PC ranges
@@ -381,6 +388,14 @@ dim_reso_test(
 
 
 # Choose best PC/resolution combo from PDFs and then rerun on main object
+
+# The "best combination" is subjective and can vary based on the focus of your analysis
+# generally, what we're looking for is:
+# - Clean UMAP projection: Try to avoid PC dimensions where the projection in UMAP space
+#   resembles a "paint splatter".
+# - Cluster separation: clusters should be distinguishable in UMAP space, but not split
+#   into many tiny islands without biological justification.
+
 
 
 
@@ -460,8 +475,9 @@ DimPlot(Mouse_obj, #group.by = "seurat_clusters",
         cols = Mouse_obj@misc$cluster_colors) + DarkTheme() + coord_fixed() + ggtitle("UMAP REDUCTION")
 
 
-# You can plot your UMAP by metadata (ex. orig.ident, sex, stage, disease condition etc.)
-#this is only after you have merged and/or integrated your data and added metadata columns
+# You can plot your UMAP by metadata (ex. orig.ident, sex, stage, disease condition etc.) 
+# that we defined earlier
+#this is mostly relevant after you have merged and/or integrated your data and added metadata columns
 #DimPlot(Mouse_obj, reduction = "umap", cols = Mouse_obj@misc$cluster_colors) + DarkTheme() + coord_fixed() + ggtitle("UMAP REDUCTION grouped"
 
 
