@@ -74,6 +74,10 @@ View(Mouse_obj)
 # view() - (lowercase 'v') is a function from the tidyverse/tibble package. It
 #           shows a static table style output in a new tab.
 
+# You can look under Assays. It shows the different assays in the object
+# with the number of [columns x rows]
+
+
 # ------------------------------------------------------------------
 # Single-Sample Analysis Workflow (QC, SCTransform, PCA, UMAP, Clustering)
 # ------------------------------------------------------------------
@@ -161,8 +165,8 @@ VlnPlot(Mouse_obj, features = c("nFeature_Xenium", "nCount_Xenium"), ncol = 2, p
 
 
 # View statistics of the object 
-#n_genes <- dim(Mouse_obj)[1]
-#n_cells <- dim(Mouse_obj)[2]
+n_genes <- dim(Mouse_obj)[1]
+n_cells <- dim(Mouse_obj)[2]
 
 
 # 2. Normalization and Feature Selection with SCTransform
@@ -370,7 +374,6 @@ dim_reso_test(
   dataset = Mouse_obj,
   dims_list = list(1:20, 1:30, 1:40, 1:50),  # test PC ranges
   resolutions = c(0.1, 0.3, 0.5, 0.7),    # test resolutions
-  # "Z:/Wellington Lab/Mehwish/Xenium_human_run1/B_HumanXenium_Run1_OG_rds"
   output_dir = "D:/work/Github_demo/xenium_demo/Data/Output", # where to save PDFs
   red = "pca",             # dimensionality reduction to use
   group_vars = c("orig.ident")# , "Orientation")  # metadata for coloring
@@ -457,8 +460,8 @@ DimPlot(Mouse_obj, #group.by = "seurat_clusters",
         cols = Mouse_obj@misc$cluster_colors) + DarkTheme() + coord_fixed() + ggtitle("UMAP REDUCTION")
 
 
-#Plot your UMAP by metadata (ex. orig.ident, sex, stage, disease condition etc.)
-#this is only after you have merged and/or integrated your data and added metadata columns (Section 3 and 4)
+# You can plot your UMAP by metadata (ex. orig.ident, sex, stage, disease condition etc.)
+#this is only after you have merged and/or integrated your data and added metadata columns
 #DimPlot(Mouse_obj, reduction = "umap", cols = Mouse_obj@misc$cluster_colors) + DarkTheme() + coord_fixed() + ggtitle("UMAP REDUCTION grouped"
 
 
@@ -517,7 +520,7 @@ DotPlot(object = Mouse_obj, features = c("Aqp4", "Gfap", "Sla", "Paqr5", "Trem2"
 # you see above.
 # Eg: if a cluster is all just low-expression cells, its not very useful, so 
 # you might want to increase nCount filter.
-# Or maybe SCTransform doesn'nt function well with your dataset, so you use 
+# Or maybe SCTransform does'nt function well with your dataset, so you use 
 # log normalization etc. There could be many such scenarios to be mindful of.
 
 # ------------------------------------------------------------------

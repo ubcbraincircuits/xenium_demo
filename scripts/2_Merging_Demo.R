@@ -47,7 +47,9 @@ setwd("D:/work/Github_demo/xenium_demo/Data")
 # ------------------------------------------------------------------
 # Multi-Sample Merge Example (Using raw RDS, unprocessed data)
 # ------------------------------------------------------------------
-#Read in original rds files (do not merge manipulated samples from section 2)
+#Read in the rds files 
+# Note: memory usage scales with the number of objects loaded. If you are running
+#       less than 16GB of system memory, we suggest commenting out object 4 and 5.
 Mouse_2L_obj <-readRDS("Region_2_left-obj.rds")
 Mouse_2L_obj <- UpdateSeuratObject(Mouse_2L_obj)
 Mouse_3L_obj <-readRDS("Region_3_left-obj.rds")
@@ -108,7 +110,7 @@ merged_obj <- readRDS("merged_raw_obj.rds") #"merged_raw_obj.rds"
 # Initialize a new metadata column 'Group' with NA values for all cells
 merged_obj$Group <- NA
 
-# Assign 'A' to cells from sample X2_fov, X3_fov, and 'Right' to cells from sample X4_fov, X5_fov 
+# Assign 'A' to cells from sample X2_fov, X3_fov, and 'B' to cells from sample X4_fov, X5_fov 
 # This works by selecting cells where orig.ident matches the sample ID
 merged_obj$Group[merged_obj$orig.ident %in% c("X2_fov", "X3_fov")] <- "A"
 merged_obj$Group[merged_obj$orig.ident %in% c("X4_fov", "X5_fov")] <- "B"

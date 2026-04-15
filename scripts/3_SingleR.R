@@ -110,7 +110,7 @@ query_expr <- GetAssayData(Mouse_obj, layer = "data", assay = "Xenium")
 # A classifier can only evaluate features (genes) that exist in both datasets
 # (Double subset avoids control probes like blank_codewords)
 common_genes <- intersect(rownames(ref_expr), rownames(query_expr))
-
+ 
 # Subset both matrices to only the overlapping features
 ref_sub <- ref_expr[common_genes, , drop = FALSE]
 query_sub <- query_expr[common_genes, , drop = FALSE]

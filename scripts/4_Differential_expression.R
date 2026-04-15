@@ -260,6 +260,7 @@ Mouse_obj <- RunUMAP(Mouse_obj, dims = 1:24)
 singler_results <- readRDS("Output/SingleR_ST_results.rds")
 Mouse_obj$CellSubtype <- singler_results$SingleR_pruned_midfine
 
+# Add condition labels
 Mouse_obj$condition <- NA
 
 Mouse_obj$condition[Mouse_obj$orig.ident %in% c("X2_fov", "X3_fov")] <- "A"
