@@ -69,7 +69,7 @@ Mouse_obj <- UpdateSeuratObject(Mouse_obj)
 gc()
 
 # Set the output directory for saving SingleR result RDS files
-# change below to something reselmbling: C:/User/User/Downloads/Data/Output
+# change below to something resmbling: C:/User/User/Downloads/Data/Output
 output_dir <- 'D:/work/Github_demo/xenium_demo/Data/Output'
 if (!dir.exists(output_dir)) {
   dir.create(output_dir, recursive = TRUE)
@@ -168,7 +168,7 @@ ImageDimPlot(Mouse_obj,
              fov = fov_name, 
              group.by = "is_unannotated", 
              cols = c("FALSE" = "grey", "TRUE" = "red"),
-             size = 0.5, ++
+             size = 0.5,
              dark.background = TRUE)
 
 # Create a proportional bar chart of cell types for the single FOV
@@ -184,25 +184,20 @@ Mouse_obj <- FindVariableFeatures(Mouse_obj, selection.method = "vst", nfeatures
 # Now that we have seen how SingleR label transfer works on a single fov
 # Lets apply this to the merged Object
 
-# First, lets clear objects from memory
+############ SECTION: SINGLE-R ANALYSIS (Multiple FOV) #######################
 
-rm(list = ls())
+# First, lets clear some objects from memory
+
+rm(ST, Mouse_obj, query_expr, query_sub, ref_sub, singleR_results)
 gc()
 
-# Xenium data 
-ST <- readRDS("merged_obj.rds")
+# merged Xenium data
+ST <- readRDS("merged_raw_obj.rds")
 
 # make dat your xenium obj 
 dat <- ST #cortical_ST
 
-# single cell data (reference)
-sc.ref <- readRDS("allen_cortex.rds") 
-
-
 output_dir <- 'D:/work/Github_demo/xenium_demo/Data/Output'
-
-# Matrix of genes x cell types (normalized counts for SingleR "ref")
-ref_expr <- pseudobulk$RNA
 
 # Identify samples in the Xenium dataset; loop runs per sample for reproducibility
 sample_names <- unique(dat$orig.ident)
@@ -295,7 +290,6 @@ ggplot(ST@meta.data, aes(x = orig.ident, fill = SingleR_pruned_midfine)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 # Normalize, cluster and Dim reduction
-ST <- FindVariableFeatures(ST, selection.method = "vst", nfeatures = 2000)
 
 
 

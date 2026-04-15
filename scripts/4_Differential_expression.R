@@ -257,7 +257,8 @@ Mouse_obj <- RunUMAP(Mouse_obj, dims = 1:24)
 
 
 # Add SingleR labels
-singler_results <- readRDS("Output/SingleR_ST_results.rds")
+# replace the input directory with where you saved the results
+singler_results <- readRDS("Output/SingleR_ST_results.rds") 
 Mouse_obj$CellSubtype <- singler_results$SingleR_pruned_midfine
 
 # Add condition labels
@@ -357,6 +358,7 @@ pb_markers_l4 <- FindMarkers(
 Idents(pseudo) <- "celltype.condition"
 DefaultAssay(pseudo) <- "Xenium"
 
+#boxplot definition
 plot_pb_box <- function(pseudo, gene, celltype = "Astro", group1 = "A", group2 = "B") {
   ids <- c(paste(celltype, group1, sep = "_"),
            paste(celltype, group2, sep = "_"))
@@ -381,7 +383,7 @@ plot_pb_box <- function(pseudo, gene, celltype = "Astro", group1 = "A", group2 =
     scale_color_manual(values = c("A" = "#E64B35", "B" = "#4DBBD5"))
 }
 
-# Example
+# Example boxplots
 p_box_aqp4 <- plot_pb_box(pseudo, gene = "Aqp4", celltype = "Astro")
 p_box_aqp4
 
@@ -416,66 +418,3 @@ VlnPlot(
     fill = NA
   ) +
   theme_classic()
-
-
-plot_pb_volcano <- function(markers_df,
-                            title = "Pseudobulk DE",
-                            x_thresh = 1,
-                            p_thresh = 0.05,
-                            label_top = 10,
-                            up_label = "Up in A",
-                            down_label = "Up in B") {
-  
-  df <- markers_df %>%
-    rownames_to_column("gene") %>%
-    mutate(
-      p_val_adj = ifelse(is.na(p_val_adj), 1, p_val_adj),
-      p_plot = pmax(p_val_adj, 1e-300),
-      status = case_when(
-        p_val_adj < p_thresh & avg_log2FC >= x_thresh  ~ up_label,
-        p_val_adj < p_thresh & avg_log2FC <= -x_thresh ~ down_label,
-        TRUE ~ "NS"
-      )
-    )
-  
-  lab_df <- df %>%
-    filter(status != "NS") %>%
-    arrange(p_val_adj) %>%
-    slice_head(n = label_top)
-  
-  ggplot(df, aes(x = avg_log2FC, y = -log10(p_plot), color = status)) +
-    geom_point(alpha = 0.8, size = 1.8) +
-    geom_vline(xintercept = c(-x_thresh, x_thresh), linetype = "dashed", linewidth = 0.3) +
-    geom_hline(yintercept = -log10(p_thresh), linetype = "dashed", linewidth = 0.3) +
-    ggrepel::geom_text_repel(
-      data = lab_df,
-      aes(label = gene),
-      size = 3,
-      max.overlaps = 20
-    ) +
-    scale_color_manual(values = c(
-      "NS" = "grey70",
-      up_label = "#E64B35",
-      down_label = "#4DBBD5"
-    )) +
-    theme_classic() +
-    labs(
-      title = title,
-      x = "avg_log2FC",
-      y = "-log10(adjusted p-value)",
-      color = NULL
-    )
-}
-
-# Example with your DE result
-p_volcano_astro <- plot_pb_volcano(
-  pb_markers_astro,
-  title = "Astro pseudobulk: A vs B",
-  x_thresh = 1,
-  p_thresh = 0.05,
-  label_top = 12,
-  up_label = "Higher in A",
-  down_label = "Higher in B"
-)
-
-p_volcano_astro

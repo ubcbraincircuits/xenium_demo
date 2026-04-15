@@ -83,6 +83,7 @@ merged_obj <- merge(
 Images(merged_obj) # or use names(Mouse_obj@images)
 
 # Contrast it to the merged object:
+# You will see all the included FOV's under images
 View(merged_obj)
 
 # Save merged raw obj as rds to re-use later down the line
