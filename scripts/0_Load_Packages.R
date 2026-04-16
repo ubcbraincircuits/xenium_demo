@@ -45,7 +45,7 @@ packages <- c(
   "future",
   
   # SingleR Analysis
-  "SingleR", "rlang", "geometry", "purrr"
+  "SingleR", "rlang", "geometry", "purrr", "DESeq2"
 )
 
 # Ensure BiocManager is installed

@@ -33,6 +33,7 @@ library(SingleR)
 library(rlang)
 library(geometry)
 library(purrr)
+library(DESeq2)
 
 # Increase maximum future global size for handling large objects
 options(future.globals.maxSize = 250000 * 1024^2)

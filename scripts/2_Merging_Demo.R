@@ -33,6 +33,7 @@ library(SingleR)
 library(rlang)
 library(geometry)
 library(purrr)
+library(DESeq2)
 
 # Increase maximum future global size for handling large objects
 options(future.globals.maxSize = 250000 * 1024^2)
@@ -193,6 +194,7 @@ residualVarPlot <- function(gene_var, xaxis = "gmean", max_resvar = 100, ntop = 
   
   return(p)
 }
+
 
 # Extracts and combines SCT attributes for merged objects
 get_gene_attributes <- function(obj, assay = "SCT") {
