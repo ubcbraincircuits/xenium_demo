@@ -272,7 +272,8 @@ DimHeatmap(merged_obj, dims = 1:12, cells = 50, balanced = TRUE)
 
 ###############
 # Recommended follow Larissa's loop from previous script.
-# We skip that in interest of time
+# We skip that in interest of time, but you can reference 
+# our run under resources on the github.
 ###############
 
 
