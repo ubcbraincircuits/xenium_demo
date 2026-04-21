@@ -13,6 +13,8 @@ and install it in the default directory.
 
 - Ensure your system has at least 8GB of memory, though 16GB or more is highly recommended.
 
+- Ensure atleast 15 GB of free storage space.
+
 - Download the required UBC data objects (.rds files) from this OSF link under the Data folder [here](https://osf.io/rgajd/files/osfstorage).
 Unzip these files in your downloads folder. These data were published and shared by M. Kapustina, details [here](https://osf.io/rgajd/files/6gxy3)
 
