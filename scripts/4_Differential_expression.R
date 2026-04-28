@@ -41,7 +41,12 @@ rm(list = ls())
 gc()
 
 
-#######SECTION: LOAD IN RDS OBJECTS, PERFORM QUALITY CONTROL, NORMALIZE DATA, DIMENTIONALITY REDUCTION AND CLUSTERING###########
+################ Standard Preprocessing Pipeline #############################
+
+# As covered in previous demos, we must prepare the raw counts before 
+# identifying differentially expressed genes (DEGs). We normalize 
+# technical variance (SCTransform), reduce dimensions (PCA), and 
+# group similar cells together (Clustering & UMAP).
 # ------------------------------------------------------------------
 # Important Note on Object Naming
 # ------------------------------------------------------------------
@@ -262,7 +267,9 @@ Mouse_obj <- RunUMAP(Mouse_obj, dims = 1:24)
 singler_results <- readRDS("Output/SingleR_ST_results.rds") 
 Mouse_obj$CellSubtype <- singler_results$SingleR_pruned_midfine
 
-# Add condition labels
+# Add condition labels to psuedobulk into
+# To perform a meaningful pseudobulk comparison (e.g., comparing healthy vs. diseased),
+# We use A and B as placeholders
 Mouse_obj$condition <- NA
 
 Mouse_obj$condition[Mouse_obj$orig.ident %in% c("X2_fov", "X3_fov")] <- "A"
@@ -278,7 +285,7 @@ Mouse_obj <- subset(
 table(Mouse_obj$orig.ident, Mouse_obj$condition)
 table(Mouse_obj$CellSubtype, Mouse_obj$condition)
 
-# Add SingleR labels
+# Add pre-calculated cell-type annotations 
 singler_results <- readRDS("Output/SingleR_ST_results.rds")
 Mouse_obj$CellSubtype <- singler_results$SingleR_pruned_midfine
 
@@ -304,7 +311,11 @@ Mouse_obj@misc$cluster_colors <- cluster_colors
 Idents(Mouse_obj) <- factor(Idents(Mouse_obj), levels = global_clusters)
 
 
-#### Start of Psuedobulk specific code ###
+############### Section: Constructing the Pseudobulk Object #####################
+# Instead of treating every single cell as an independent sample, we aggregate
+# (sum) all counts from cells of the same type within the same biological replicate. 
+# This turns our single-cell data into something resembling traditional RNA-seq 
+# bulk data, allowing us to use rigorous tools like DESeq2.
 
 
 # Aggregate raw counts by sample and cell subtype (or other metadata grouping)
