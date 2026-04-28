@@ -565,11 +565,11 @@ obj_sub <- subset(Mouse_obj, idents = c(0, 2, 4, 6))
 #every sample will have a diff set of coordinates so you use ImageDimPlot() for x and y coordinates
 #in ImageDimPlot() what is labeled as y on the axis is actually x coordinates in the code,
 #and what is labeled as x on the axis is actually y coordinates
-#obj1_crop[["M_70"]] <- Crop(
-#  obj1_crop[["M_70"]], x = c(100, 2000), y = c(500, 3000))
+#obj1_crop[["X8fov"]] <- Crop(
+#  obj1_crop[["X8fov"]], x = c(100, 2000), y = c(500, 3000))
 
 # Pull out all cell barcodes within that cropped region
-#keep_cells <- Cells(obj1_crop[["M_70"]]) 
+#keep_cells <- Cells(obj1_crop[["X8fov"]]) 
 
 #Subset so that only those cropped cells remain
 #obj_sub <- subset(obj1_crop, cells = keep_cells)
