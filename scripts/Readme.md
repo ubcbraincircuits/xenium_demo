@@ -51,7 +51,7 @@ With your cells clustered and identified, the final step is to find out which ge
 > The order of these scripts is intended to be introductory for learning, but it is not fixed. In real analyses, 
 > you should move back and forth between steps, revisit earlier decisions, try different parameters.
 > Don’t be afraid to experiment, explore the objects, and get your 
-> hands dirty. That is often the mpst effective way to learn how these tools work.
+> hands dirty. That is often the most effective way to learn how these tools work.
 
 
 
