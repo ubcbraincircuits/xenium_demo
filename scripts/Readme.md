@@ -8,7 +8,7 @@ Please go through the scripts in the numerical order provided below. Each script
 Before analyzing any data, you must ensure your R environment is correctly configured. 
 - **What it does:** This script safely installs and loads all the necessary packages for the entire workflow (e.g., `Seurat`, `ggplot2`, `SingleR`, `DESeq2`). It uses `BiocManager` to fetch tools from both CRAN and Bioconductor.
 
-## Step 1: Understanding the Basics (Single Sample Analysis)
+## Step 1: Signle Sample Basics
 **File:** `1_Single_File_Demo.R`
 
 We start analysis by looking at just one Field of View (FOV) / sample. This makes it easier to understand the data structure before dealing with multi-sample datasets.
@@ -28,7 +28,7 @@ Here, we combine multiple spatial samples into one dataset for convenience in do
   - **Merging:** Stitching together raw `.rds` objects.
   - **Batch Correction (Harmony):** active "Integration" using Harmony.
 
-## Step 3: Annotating Cell Types
+## Step 3: Cell Type Label Transfer
 **File:** `3_SingleR.R`
 
 Here, we give cells a cell-type annotation (e.g., Astrocytes, Neurons, Microglia).
@@ -38,7 +38,7 @@ Here, we give cells a cell-type annotation (e.g., Astrocytes, Neurons, Microglia
   - **Label Transfer:** Mapping the reference labels onto both a single FOV and your fully merged dataset.
   - **Confidence Pruning:** Dropping ambiguous cells to keep only high-confidence annotations (`SingleR_pruned_midfine`).
 
-## Step 4: Finding Biological Differences
+## Step 4: DEG
 **File:** `4_Differential_expression.R`
 
 With your cells clustered and identified, the final step is to find out which genes are significantly upregulated or downregulated between different groups.
