@@ -1,7 +1,5 @@
 # Xenium Spatial Transcriptomics Analysis Scripts Workflow
 
-Welcome to the Xenium spatial transcriptomics analysis walkthrough! This guide will take you step-by-step through processing, visualizing, and analyzing your spatial data using Seurat and associated packages. 
-
 Please go through the scripts in the numerical order provided below. Each script builds upon concepts and files generated in the previous steps.
 
 ## Step 0: Setting Up Your Environment
@@ -19,7 +17,7 @@ We start analysis by looking at just one Field of View (FOV) / sample. This make
   - **Quality Control (QC):** Filtering out poor-quality cells based on transcript counts.
   - **Normalization:** Using `SCTransform` to remove technical noise while preserving true biological variance.
   - **Dimensionality Reduction & Clustering:** Running PCA, selecting dimensions via Elbow plots, grouping cells into clusters, and visualizing them with UMAP.
-  - **Spatial Visualization:** Plotting gene expression directly onto the spatial tissue map (`ImageDimPlot` and `ImageFeaturePlot`).
+  - **Visualization:** Plotting gene expression directly onto the spatial tissue map and/or UMAP space
 
 ## Step 2: Combining Multiple Samples
 **File:** `2_Merging_Demo.R`
@@ -47,7 +45,13 @@ With your cells clustered and identified, the final step is to find out which ge
 - **What it does:** Different statistical approaches to finding Differentially Expressed Genes (DEGs).
 - **Key Concepts Covered:**
   - **Single-Cell DEGs:** Using `FindAllMarkers` on `SCTransform` normalized data to find genes that define specific clusters.
-  - **Pseudobulk DEGs:** A more statistically robust method for comparing conditions (e.g., "Condition A Astrocytes" vs "Condition B Astrocytes"). We use `AggregateExpression` to sum counts by replicate, and test them using `DESeq2`.
+  - **Pseudobulk DEGs:** We use `AggregateExpression` to sum counts by replicate, and test them using `DESeq2`.
+
+> NOTE: This walkthrough is meant as a demonstration of some of the things you can do with Seurat and Xenium data. 
+> The order of these scripts is intended to be introductory for learning, but it is not fixed. In real analyses, 
+> you should move back and forth between steps, revisit earlier decisions, try different parameters.
+> Don’t be afraid to experiment, explore the objects, and get your 
+> hands dirty. That is often the mpst effective way to learn how these tools work.
 
 
 
