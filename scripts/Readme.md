@@ -8,7 +8,7 @@ Please go through the scripts in the numerical order provided below. Each script
 Before analyzing any data, you must ensure your R environment is correctly configured. 
 - **What it does:** This script safely installs and loads all the necessary packages for the entire workflow (e.g., `Seurat`, `ggplot2`, `SingleR`, `DESeq2`). It uses `BiocManager` to fetch tools from both CRAN and Bioconductor.
 
-## Step 1: Signle Sample Basics
+## Step 1: Single Sample Basics
 **File:** `1_Single_File_Demo.R`
 
 We start analysis by looking at just one Field of View (FOV) / sample. This makes it easier to understand the data structure before dealing with multi-sample datasets.

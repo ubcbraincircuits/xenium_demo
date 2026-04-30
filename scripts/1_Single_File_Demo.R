@@ -453,7 +453,10 @@ Mouse_obj <- RunUMAP(Mouse_obj, dims = 1:24)
 global_clusters <- levels(Idents(Mouse_obj))
 n <- length(global_clusters)
 
-# Generate distinct color palette (Polychrome handles up to 40–50 unique colors)
+# Generate distinct color palette (Polychrome handles up to 36 unique colors)
+# if you suspect the number of clusters(for eg with
+# Resources/dim_res_test_single_fov/Dim_50_Res_0.7.png in the github) 
+# you might want to use a different color scheme library, for eg dittoseq
 if (n <= 36) {
   palette <- Polychrome::palette36.colors(n)
 } else {
