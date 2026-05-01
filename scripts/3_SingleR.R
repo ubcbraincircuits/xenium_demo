@@ -62,6 +62,14 @@ setwd("D:/work/Github_demo/xenium_demo/Data")
 sc.ref <- readRDS("allen_cortex.rds") 
 # Can also be accessed here: https://www.dropbox.com/s/cuowvm4vrf65pvq/allen_cortex.rds?dl=1
 
+# For a full mouse brain reference, it can be accessed at this link:
+# https://www.braindatacenter.cn/datacenter/web/#/dataSet/details?id=1888063966518173697
+# shared in this paper:
+# https://www.cell.com/neuron/fulltext/S0896-6273(25)00133-3?_returnURL=https%3A%2F%2[…]vier.com%2Fretrieve%2Fpii%2FS0896627325001333%3Fshowall%3Dtrue
+
+# you will find mouseBrain.snRNAseq.308Clusters.seurat.20230607.rds after scrolling down
+# under File Downloads
+
 # Xenium data for a single FOV/sample. Our Query data
 Mouse_obj <- readRDS("Region_2_right-obj.rds")
 Mouse_obj <- UpdateSeuratObject(Mouse_obj)
